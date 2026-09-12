@@ -35,7 +35,6 @@
       gap: 20px;
     }
 
-    /* Admin Panel Styling */
     .admin-panel {
       padding: 20px;
       background: var(--bg-panel);
@@ -69,7 +68,6 @@
     .btn-strike { background: #0284c7; grid-column: span 3; }
     .btn-manual { background: #374151; border: 1px solid #4b5563; }
 
-    /* Scorebar Overlay Styling */
     .scorebar-container {
       background: rgba(15, 23, 42, 0.95);
       border-left: 5px solid var(--accent-yellow);
@@ -139,7 +137,6 @@
 <body>
 
   <div class="container">
-    <!-- Admin Control Panel -->
     <div class="admin-panel">
       <h2>🏏 Scorecard Controller (Batsman & Bowler Over Tracker)</h2>
 
@@ -149,7 +146,7 @@
         <input type="text" id="in-team-b" placeholder="Team B Name" value="TEAM B" oninput="sync()">
         <input type="text" id="in-striker" placeholder="Striker Name" value="Striker" oninput="sync()">
         <input type="text" id="in-non-striker" placeholder="Non-Striker Name" value="Non-Striker" oninput="sync()">
-        <input type="text" id="in-bowler" placeholder="Current Bowler" value="Bowler Name" oninput="onBowlerChange()" style="grid-column: span 2;">
+        <input type="text" id="in-bowler" placeholder="Current Bowler" value="Bowler Name" onchange="onBowlerChange()" style="grid-column: span 2;">
       </div>
       
       <div class="section-title">⚡ Quick Actions (Auto Run, Bowler Stats & Over Tracker)</div>
@@ -177,7 +174,6 @@
       </div>
     </div>
 
-    <!-- Live Overlay Preview -->
     <div class="scorebar-container" id="scorebar">
       <div class="main-row">
         <div class="team-info"><span id="out-team-a">TEAM A</span> vs <span id="out-team-b">TEAM B</span></div>
@@ -195,7 +191,7 @@
         </div>
         <div style="text-align: right;">
           BOWL: <span class="player-highlight" id="out-bowler">Bowler Name 0-0 (0.0)</span>
-          <div class="over-tracker" id="out-this-over">THIS OVER: [ ]</div>
+          <div class="over-tracker" id="out-this-over">THIS OVER: [ - ]</div>
         </div>
       </div>
     </div>
@@ -215,7 +211,6 @@
     let strikerRuns = 0, strikerBalls = 0;
     let nonStrikerRuns = 0, nonStrikerBalls = 0;
     
-    // Bowler Stats
     let bowlerRuns = 0, bowlerWickets = 0, bowlerBalls = 0;
     let currentOverBalls = [];
 
@@ -254,7 +249,6 @@
     function triggerAnim(type) { sync(type); }
 
     function onBowlerChange() {
-      // Reset bowler over tracker when a new bowler is entered
       bowlerRuns = 0;
       bowlerWickets = 0;
       bowlerBalls = 0;
@@ -282,20 +276,17 @@
       strikerRuns += r;
       strikerBalls++;
 
-      // Bowler stats
       bowlerRuns += r;
       bowlerBalls++;
       currentOverBalls.push(label);
 
-      // Rotate strike on odd runs (1, 3)
       if (r % 2 !== 0) {
         swapStrike();
       }
 
-      // Rotate strike and clear over tracker at end of over (6 balls)
       if (legalBalls % 6 === 0) {
         swapStrike();
-        setTimeout(() => { currentOverBalls = []; sync(); }, 1500); // clears over log after brief display
+        setTimeout(() => { currentOverBalls = []; sync(); }, 1500);
       }
 
       sync();
@@ -311,7 +302,6 @@
         bowlerBalls++;
         currentOverBalls.push('W');
 
-        // Reset new batsman stats
         strikerRuns = 0;
         strikerBalls = 0;
         document.getElementById('in-striker').value = "New Batsman";

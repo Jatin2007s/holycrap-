@@ -7,9 +7,9 @@
   <style>
     :root {
       --accent-yellow: #facc15;
-      --four-color: #4ade80;
-      --six-color: #a78bfa;
-      --wicket-color: #f87171;
+      --four-color: #22c55e;
+      --six-color: #a855f7;
+      --wicket-color: #ef4444;
     }
 
     body {
@@ -21,6 +21,12 @@
       overflow: hidden;
     }
 
+    .overlay-wrapper {
+      position: relative;
+      width: 100%;
+      max-width: 850px;
+    }
+
     .scorebar-container {
       background: rgba(15, 23, 42, 0.95);
       border-left: 6px solid var(--accent-yellow);
@@ -30,9 +36,7 @@
       padding: 12px 20px;
       box-shadow: 0 8px 32px rgba(0,0,0,0.8);
       width: 100%;
-      max-width: 850px;
       box-sizing: border-box;
-      transition: border-color 0.3s, background-color 0.3s;
     }
 
     .main-row {
@@ -65,15 +69,17 @@
       justify-content: space-between;
     }
 
-    .status-row {
-      background: #16a34a;
-      color: white;
+    .winner-banner {
+      background: linear-gradient(135deg, #16a34a, #15803d);
+      color: #ffffff;
       text-align: center;
-      padding: 6px;
-      border-radius: 4px;
+      padding: 10px;
+      border-radius: 6px;
       margin-top: 8px;
-      font-weight: bold;
-      font-size: 14px;
+      font-weight: 900;
+      font-size: 16px;
+      box-shadow: 0 4px 15px rgba(22, 163, 74, 0.5);
+      letter-spacing: 1px;
     }
 
     .team-info { font-size: 20px; font-weight: 800; color: var(--accent-yellow); }
@@ -89,59 +95,78 @@
       letter-spacing: 1px;
     }
 
-    @keyframes pulse-animation {
-      0% { transform: scale(1); }
-      50% { transform: scale(1.03); }
-      100% { transform: scale(1); }
+    /* Boundary / Wicket Pop-up Banner */
+    .popup-badge {
+      position: absolute;
+      top: -15px;
+      right: 20px;
+      padding: 8px 24px;
+      border-radius: 30px;
+      font-size: 22px;
+      font-weight: 900;
+      color: #fff;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+      box-shadow: 0 10px 25px rgba(0,0,0,0.6);
+      transform: scale(0);
+      opacity: 0;
+      transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s;
+      z-index: 10;
     }
 
-    .scorebar-container.animate-four {
-      animation: pulse-animation 0.5s ease-in-out;
-      border-left-color: var(--four-color);
-      background-color: rgba(22, 163, 74, 0.9);
+    .popup-badge.show {
+      transform: scale(1);
+      opacity: 1;
     }
 
-    .scorebar-container.animate-six {
-      animation: pulse-animation 0.5s ease-in-out;
-      border-left-color: var(--six-color);
-      background-color: rgba(147, 51, 234, 0.9);
+    .popup-badge.FOUR {
+      background: linear-gradient(135deg, #22c55e, #15803d);
+      border: 2px solid #86efac;
     }
 
-    .scorebar-container.animate-wicket {
-      animation: pulse-animation 0.6s ease-in-out;
-      border-left-color: var(--wicket-color);
-      background-color: rgba(220, 38, 38, 0.95);
+    .popup-badge.SIX {
+      background: linear-gradient(135deg, #a855f7, #7e22ce);
+      border: 2px solid #d8b4fe;
+    }
+
+    .popup-badge.WICKET {
+      background: linear-gradient(135deg, #ef4444, #b91c1c);
+      border: 2px solid #fca5a5;
     }
   </style>
 </head>
 <body>
 
-  <div class="scorebar-container" id="scorebar">
-    <div class="main-row">
-      <div class="team-info"><span id="out-team-a">TEAM A</span> vs <span id="out-team-b">TEAM B</span></div>
-      <div class="score-info">
-        <span id="runs">0</span>/<span id="wickets">0</span>
+  <div class="overlay-wrapper">
+    <!-- Pop-up Badge for 4s, 6s, and Wickets -->
+    <div id="popup-badge" class="popup-badge">FOUR!</div>
+
+    <div class="scorebar-container" id="scorebar">
+      <div class="main-row">
+        <div class="team-info"><span id="out-team-a">TEAM A</span> vs <span id="out-team-b">TEAM B</span></div>
+        <div class="score-info">
+          <span id="runs">0</span>/<span id="wickets">0</span>
+        </div>
+        <div class="overs-info">
+          OVERS: <span id="overs">0.0</span> / <span id="out-max-overs">20</span>
+        </div>
       </div>
-      <div class="overs-info">
-        OVERS: <span id="overs">0.0</span> / <span id="out-max-overs">20</span>
+      <div class="sub-row">
+        <div>
+          BAT: <span class="player-highlight" id="out-striker">Striker* 0 (0)</span> | 
+          <span id="out-non-striker">Non-Striker 0 (0)</span>
+        </div>
+        <div style="text-align: right;">
+          BOWL: <span class="player-highlight" id="out-bowler">Bowler Name 0-0 (0.0)</span>
+          <div class="over-tracker" id="out-this-over">THIS OVER: [ - ]</div>
+        </div>
       </div>
+      <div class="target-row" id="target-banner" style="display: none;">
+        <span>TARGET: <span id="out-target">0</span></span>
+        <span id="out-need">NEED 0 OFF 0 BALLS</span>
+        <span>RRR: <span id="out-rrr">0.00</span></span>
+      </div>
+      <div class="winner-banner" id="status-banner" style="display: none;">🏆 MATCH FINISHED</div>
     </div>
-    <div class="sub-row">
-      <div>
-        BAT: <span class="player-highlight" id="out-striker">Striker* 0 (0)</span> | 
-        <span id="out-non-striker">Non-Striker 0 (0)</span>
-      </div>
-      <div style="text-align: right;">
-        BOWL: <span class="player-highlight" id="out-bowler">Bowler Name 0-0 (0.0)</span>
-        <div class="over-tracker" id="out-this-over">THIS OVER: [ - ]</div>
-      </div>
-    </div>
-    <div class="target-row" id="target-banner" style="display: none;">
-      <span>TARGET: <span id="out-target">0</span></span>
-      <span id="out-need">NEED 0 OFF 0 BALLS</span>
-      <span>RRR: <span id="out-rrr">0.00</span></span>
-    </div>
-    <div class="status-row" id="status-banner" style="display: none;">MATCH FINISHED</div>
   </div>
 
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -152,7 +177,23 @@
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database().ref('matchState');
-    const scorebar = document.getElementById('scorebar');
+
+    let lastAnimId = null;
+    let animTimeout = null;
+
+    function showPopup(type) {
+      const badge = document.getElementById('popup-badge');
+      badge.className = `popup-badge ${type} show`;
+
+      if (type === 'FOUR') badge.innerText = '4️⃣ FOUR!';
+      else if (type === 'SIX') badge.innerText = '6️⃣ SIX!';
+      else if (type === 'WICKET') badge.innerText = '☝️ WICKET!';
+
+      clearTimeout(animTimeout);
+      animTimeout = setTimeout(() => {
+        badge.classList.remove('show');
+      }, 2500);
+    }
 
     db.on('value', (snapshot) => {
       const data = snapshot.val();
@@ -189,10 +230,9 @@
           statusBanner.style.display = 'none';
         }
 
-        if (data.anim) {
-          const animClass = `animate-${data.anim}`;
-          scorebar.classList.add(animClass);
-          setTimeout(() => { scorebar.classList.remove(animClass); }, 600);
+        if (data.anim && data.animId !== lastAnimId) {
+          lastAnimId = data.animId;
+          showPopup(data.anim);
         }
       }
     });

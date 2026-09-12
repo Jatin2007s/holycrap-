@@ -30,7 +30,7 @@
       padding: 12px 20px;
       box-shadow: 0 8px 32px rgba(0,0,0,0.8);
       width: 100%;
-      max-width: 800px;
+      max-width: 850px;
       box-sizing: border-box;
       transition: border-color 0.3s, background-color 0.3s;
     }
@@ -50,6 +50,19 @@
       padding-top: 6px;
       font-size: 14px;
       color: #d1d5db;
+    }
+
+    .target-row {
+      background: rgba(234, 179, 8, 0.18);
+      border-top: 1px solid rgba(250, 204, 21, 0.3);
+      margin-top: 8px;
+      padding: 5px 12px;
+      border-radius: 4px;
+      font-size: 13px;
+      font-weight: bold;
+      color: var(--accent-yellow);
+      display: flex;
+      justify-content: space-between;
     }
 
     .team-info { font-size: 20px; font-weight: 800; color: var(--accent-yellow); }
@@ -99,7 +112,7 @@
         <span id="runs">0</span>/<span id="wickets">0</span>
       </div>
       <div class="overs-info">
-        OVERS: <span id="overs">0.0</span>
+        OVERS: <span id="overs">0.0</span> / <span id="out-max-overs">20</span>
       </div>
     </div>
     <div class="sub-row">
@@ -111,6 +124,11 @@
         BOWL: <span class="player-highlight" id="out-bowler">Bowler Name 0-0 (0.0)</span>
         <div class="over-tracker" id="out-this-over">THIS OVER: [ - ]</div>
       </div>
+    </div>
+    <div class="target-row" id="target-banner" style="display: none;">
+      <span>TARGET: <span id="out-target">0</span></span>
+      <span id="out-need">NEED 0 OFF 0 BALLS</span>
+      <span>RRR: <span id="out-rrr">0.00</span></span>
     </div>
   </div>
 
@@ -139,13 +157,22 @@
         document.getElementById('runs').innerText = data.runs || 0;
         document.getElementById('wickets').innerText = data.wickets || 0;
         document.getElementById('overs').innerText = data.overs || "0.0";
+        document.getElementById('out-max-overs').innerText = data.maxOvers || 20;
+
+        const targetBanner = document.getElementById('target-banner');
+        if (data.innings === "2") {
+          targetBanner.style.display = 'flex';
+          document.getElementById('out-target').innerText = data.target || 0;
+          document.getElementById('out-need').innerText = `NEED ${data.needRuns || 0} OFF ${data.remainingBalls || 0} BALLS`;
+          document.getElementById('out-rrr').innerText = data.rrr || "0.00";
+        } else {
+          targetBanner.style.display = 'none';
+        }
 
         if (data.anim) {
           const animClass = `animate-${data.anim}`;
           scorebar.classList.add(animClass);
-          setTimeout(() => {
-            scorebar.classList.remove(animClass);
-          }, 600);
+          setTimeout(() => { scorebar.classList.remove(animClass); }, 600);
         }
       }
     });

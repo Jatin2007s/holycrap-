@@ -7,9 +7,6 @@
   <style>
     :root {
       --accent-yellow: #facc15;
-      --four-color: #22c55e;
-      --six-color: #a855f7;
-      --wicket-color: #ef4444;
     }
 
     body {
@@ -37,6 +34,8 @@
       box-shadow: 0 8px 32px rgba(0,0,0,0.8);
       width: 100%;
       box-sizing: border-box;
+      position: relative;
+      overflow: hidden;
     }
 
     .main-row {
@@ -95,52 +94,58 @@
       letter-spacing: 1px;
     }
 
-    /* Boundary / Wicket Pop-up Banner */
-    .popup-badge {
+    /* Full-Bar Overlay Banner for 4, 6, and Wicket */
+    .full-bar-alert {
       position: absolute;
-      top: -15px;
-      right: 20px;
-      padding: 8px 24px;
-      border-radius: 30px;
-      font-size: 22px;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 38px;
       font-weight: 900;
-      color: #fff;
-      text-shadow: 0 2px 4px rgba(0,0,0,0.5);
-      box-shadow: 0 10px 25px rgba(0,0,0,0.6);
-      transform: scale(0);
+      letter-spacing: 3px;
+      text-transform: uppercase;
       opacity: 0;
-      transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s;
-      z-index: 10;
+      pointer-events: none;
+      transform: translateY(-100%);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      z-index: 20;
     }
 
-    .popup-badge.show {
-      transform: scale(1);
+    .full-bar-alert.show {
       opacity: 1;
+      transform: translateY(0);
     }
 
-    .popup-badge.FOUR {
-      background: linear-gradient(135deg, #22c55e, #15803d);
-      border: 2px solid #86efac;
+    .full-bar-alert.FOUR {
+      background: linear-gradient(135deg, #15803d, #22c55e);
+      color: #ffffff;
+      text-shadow: 0 2px 10px rgba(0,0,0,0.5);
     }
 
-    .popup-badge.SIX {
-      background: linear-gradient(135deg, #a855f7, #7e22ce);
-      border: 2px solid #d8b4fe;
+    .full-bar-alert.SIX {
+      background: linear-gradient(135deg, #6b21a8, #a855f7);
+      color: #ffffff;
+      text-shadow: 0 2px 10px rgba(0,0,0,0.5);
     }
 
-    .popup-badge.WICKET {
-      background: linear-gradient(135deg, #ef4444, #b91c1c);
-      border: 2px solid #fca5a5;
+    .full-bar-alert.WICKET {
+      background: linear-gradient(135deg, #991b1b, #ef4444);
+      color: #ffffff;
+      text-shadow: 0 2px 10px rgba(0,0,0,0.5);
     }
   </style>
 </head>
 <body>
 
   <div class="overlay-wrapper">
-    <!-- Pop-up Badge for 4s, 6s, and Wickets -->
-    <div id="popup-badge" class="popup-badge">FOUR!</div>
-
     <div class="scorebar-container" id="scorebar">
+      <!-- Full Bar Alert Overlay -->
+      <div id="full-bar-alert" class="full-bar-alert">4️⃣ FOUR!</div>
+
       <div class="main-row">
         <div class="team-info"><span id="out-team-a">TEAM A</span> vs <span id="out-team-b">TEAM B</span></div>
         <div class="score-info">
@@ -181,18 +186,20 @@
     let lastAnimId = null;
     let animTimeout = null;
 
-    function showPopup(type) {
-      const badge = document.getElementById('popup-badge');
-      badge.className = `popup-badge ${type} show`;
+    function triggerFullBarAlert(type) {
+      const alertBox = document.getElementById('full-bar-alert');
+      
+      if (type === 'FOUR') alertBox.innerText = '4️⃣ FOUR!';
+      else if (type === 'SIX') alertBox.innerText = '6️⃣ SIX!';
+      else if (type === 'WICKET') alertBox.innerText = '☝️ WICKET!';
+      else return;
 
-      if (type === 'FOUR') badge.innerText = '4️⃣ FOUR!';
-      else if (type === 'SIX') badge.innerText = '6️⃣ SIX!';
-      else if (type === 'WICKET') badge.innerText = '☝️ WICKET!';
+      alertBox.className = `full-bar-alert ${type} show`;
 
       clearTimeout(animTimeout);
       animTimeout = setTimeout(() => {
-        badge.classList.remove('show');
-      }, 2500);
+        alertBox.classList.remove('show');
+      }, 2000);
     }
 
     db.on('value', (snapshot) => {
@@ -232,7 +239,7 @@
 
         if (data.anim && data.animId !== lastAnimId) {
           lastAnimId = data.animId;
-          showPopup(data.anim);
+          triggerFullBarAlert(data.anim);
         }
       }
     });

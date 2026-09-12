@@ -46,7 +46,7 @@
     .section-title { font-size: 13px; color: #9ca3af; margin: 15px 0 6px 0; text-transform: uppercase; letter-spacing: 1px; }
 
     .input-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
-    input {
+    input, select {
       padding: 10px; border-radius: 6px; border: 1px solid #374151;
       background: #1f2937; color: #fff; font-size: 14px; width: 100%; box-sizing: border-box;
     }
@@ -96,6 +96,19 @@
       color: #d1d5db;
     }
 
+    .target-row {
+      background: rgba(234, 179, 8, 0.15);
+      border-top: 1px solid rgba(250, 204, 21, 0.3);
+      margin-top: 8px;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 13px;
+      font-weight: bold;
+      color: var(--accent-yellow);
+      display: flex;
+      justify-content: space-between;
+    }
+
     .team-info { font-size: 20px; font-weight: 800; color: var(--accent-yellow); }
     .score-info { font-size: 28px; font-weight: 900; }
     .overs-info { font-size: 18px; color: #9ca3af; font-weight: 600; }
@@ -138,18 +151,37 @@
 
   <div class="container">
     <div class="admin-panel">
-      <h2>🏏 Scorecard Controller (Batsman & Bowler Over Tracker)</h2>
+      <h2>🏏 Cricket Scorecard Controller</h2>
+
+      <div class="section-title">⚙️ Match Settings & Target</div>
+      <div class="input-grid" style="margin-bottom: 10px;">
+        <div>
+          <label style="font-size: 12px; color: #9ca3af;">Total Overs</label>
+          <input type="number" id="in-max-overs" placeholder="Total Overs" value="20" oninput="sync()">
+        </div>
+        <div>
+          <label style="font-size: 12px; color: #9ca3af;">Innings</label>
+          <select id="in-innings" onchange="sync()">
+            <option value="1">1st Innings</option>
+            <option value="2">2nd Innings (Chasing)</option>
+          </select>
+        </div>
+        <div style="grid-column: span 2;">
+          <label style="font-size: 12px; color: #9ca3af;">Target Runs (2nd Innings)</label>
+          <input type="number" id="in-target" placeholder="Target Score (e.g. 150)" value="0" oninput="sync()">
+        </div>
+      </div>
 
       <div class="section-title">📝 Teams & Players</div>
       <div class="input-grid">
-        <input type="text" id="in-team-a" placeholder="Team A Name" value="TEAM A" oninput="sync()">
-        <input type="text" id="in-team-b" placeholder="Team B Name" value="TEAM B" oninput="sync()">
+        <input type="text" id="in-team-a" placeholder="Batting Team" value="TEAM A" oninput="sync()">
+        <input type="text" id="in-team-b" placeholder="Bowling Team" value="TEAM B" oninput="sync()">
         <input type="text" id="in-striker" placeholder="Striker Name" value="Striker" oninput="sync()">
         <input type="text" id="in-non-striker" placeholder="Non-Striker Name" value="Non-Striker" oninput="sync()">
         <input type="text" id="in-bowler" placeholder="Current Bowler" value="Bowler Name" onchange="onBowlerChange()" style="grid-column: span 2;">
       </div>
       
-      <div class="section-title">⚡ Quick Actions (Auto Run, Bowler Stats & Over Tracker)</div>
+      <div class="section-title">⚡ Quick Actions</div>
       <div class="grid-buttons">
         <button class="btn-dot" onclick="addBall(0, '0')">0 (Dot Ball)</button>
         <button onclick="addBall(1, '1')">+1 Run</button>
@@ -174,6 +206,7 @@
       </div>
     </div>
 
+    <!-- Live Preview -->
     <div class="scorebar-container" id="scorebar">
       <div class="main-row">
         <div class="team-info"><span id="out-team-a">TEAM A</span> vs <span id="out-team-b">TEAM B</span></div>
@@ -181,7 +214,7 @@
           <span id="runs">0</span>/<span id="wickets">0</span>
         </div>
         <div class="overs-info">
-          OVERS: <span id="overs">0.0</span>
+          OVERS: <span id="overs">0.0</span> / <span id="out-max-overs">20</span>
         </div>
       </div>
       <div class="sub-row">
@@ -193,6 +226,11 @@
           BOWL: <span class="player-highlight" id="out-bowler">Bowler Name 0-0 (0.0)</span>
           <div class="over-tracker" id="out-this-over">THIS OVER: [ - ]</div>
         </div>
+      </div>
+      <div class="target-row" id="target-banner" style="display: none;">
+        <span>TARGET: <span id="out-target">0</span></span>
+        <span id="out-need">NEED 0 OFF 0 BALLS</span>
+        <span>RRR: <span id="out-rrr">0.00</span></span>
       </div>
     </div>
   </div>
@@ -221,16 +259,22 @@
       const bowlerOverNum = Math.floor(bowlerBalls / 6);
       const bowlerBallNum = bowlerBalls % 6;
 
-      const strikerName = document.getElementById('in-striker').value || 'Striker';
-      const nonStrikerName = document.getElementById('in-non-striker').value || 'Non-Striker';
+      const maxOvers = parseInt(document.getElementById('in-max-overs').value) || 20;
+      const innings = document.getElementById('in-innings').value;
+      const target = parseInt(document.getElementById('in-target').value) || 0;
+
+      const totalBallsInMatch = maxOvers * 6;
+      const remainingBalls = Math.max(0, totalBallsInMatch - legalBalls);
+      const needRuns = Math.max(0, target - runs);
+      const rrr = remainingBalls > 0 ? ((needRuns / remainingBalls) * 6).toFixed(2) : "0.00";
 
       db.set({
         teamA: document.getElementById('in-team-a').value || 'TEAM A',
         teamB: document.getElementById('in-team-b').value || 'TEAM B',
-        strikerName: strikerName,
+        strikerName: document.getElementById('in-striker').value || 'Striker',
         strikerRuns: strikerRuns,
         strikerBalls: strikerBalls,
-        nonStrikerName: nonStrikerName,
+        nonStrikerName: document.getElementById('in-non-striker').value || 'Non-Striker',
         nonStrikerRuns: nonStrikerRuns,
         nonStrikerBalls: nonStrikerBalls,
         bowler: document.getElementById('in-bowler').value || 'Bowler Name',
@@ -241,6 +285,12 @@
         runs: runs,
         wickets: wickets,
         overs: `${overNum}.${ballNum}`,
+        maxOvers: maxOvers,
+        innings: innings,
+        target: target,
+        needRuns: needRuns,
+        remainingBalls: remainingBalls,
+        rrr: rrr,
         anim: animType,
         timestamp: Date.now()
       });
@@ -280,10 +330,7 @@
       bowlerBalls++;
       currentOverBalls.push(label);
 
-      if (r % 2 !== 0) {
-        swapStrike();
-      }
-
+      if (r % 2 !== 0) swapStrike();
       if (legalBalls % 6 === 0) {
         swapStrike();
         setTimeout(() => { currentOverBalls = []; sync(); }, 1500);
@@ -297,7 +344,6 @@
         wickets++;
         legalBalls++;
         strikerBalls++;
-        
         bowlerWickets++;
         bowlerBalls++;
         currentOverBalls.push('W');
@@ -344,13 +390,22 @@
         document.getElementById('runs').innerText = data.runs || 0;
         document.getElementById('wickets').innerText = data.wickets || 0;
         document.getElementById('overs').innerText = data.overs || "0.0";
+        document.getElementById('out-max-overs').innerText = data.maxOvers || 20;
+
+        const targetBanner = document.getElementById('target-banner');
+        if (data.innings === "2") {
+          targetBanner.style.display = 'flex';
+          document.getElementById('out-target').innerText = data.target || 0;
+          document.getElementById('out-need').innerText = `NEED ${data.needRuns || 0} OFF ${data.remainingBalls || 0} BALLS`;
+          document.getElementById('out-rrr').innerText = data.rrr || "0.00";
+        } else {
+          targetBanner.style.display = 'none';
+        }
 
         if (data.anim) {
           const animClass = `animate-${data.anim}`;
           scorebar.classList.add(animClass);
-          setTimeout(() => {
-            scorebar.classList.remove(animClass);
-          }, 600);
+          setTimeout(() => { scorebar.classList.remove(animClass); }, 600);
         }
       }
     });

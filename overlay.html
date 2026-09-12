@@ -65,6 +65,17 @@
       justify-content: space-between;
     }
 
+    .status-row {
+      background: #16a34a;
+      color: white;
+      text-align: center;
+      padding: 6px;
+      border-radius: 4px;
+      margin-top: 8px;
+      font-weight: bold;
+      font-size: 14px;
+    }
+
     .team-info { font-size: 20px; font-weight: 800; color: var(--accent-yellow); }
     .score-info { font-size: 28px; font-weight: 900; }
     .overs-info { font-size: 18px; color: #9ca3af; font-weight: 600; }
@@ -130,6 +141,7 @@
       <span id="out-need">NEED 0 OFF 0 BALLS</span>
       <span>RRR: <span id="out-rrr">0.00</span></span>
     </div>
+    <div class="status-row" id="status-banner" style="display: none;">MATCH FINISHED</div>
   </div>
 
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -167,6 +179,14 @@
           document.getElementById('out-rrr').innerText = data.rrr || "0.00";
         } else {
           targetBanner.style.display = 'none';
+        }
+
+        const statusBanner = document.getElementById('status-banner');
+        if (data.matchStatusText && data.matchStatusText !== "") {
+          statusBanner.innerText = data.matchStatusText;
+          statusBanner.style.display = 'block';
+        } else {
+          statusBanner.style.display = 'none';
         }
 
         if (data.anim) {

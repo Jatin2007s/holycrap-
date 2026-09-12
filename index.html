@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cricket Scorecard Controller & Overlay</title>
+  <title>Cricket Scorecard Controller</title>
   <style>
     :root {
       --bg-panel: #111827;
@@ -109,6 +109,17 @@
       justify-content: space-between;
     }
 
+    .status-row {
+      background: #16a34a;
+      color: white;
+      text-align: center;
+      padding: 6px;
+      border-radius: 4px;
+      margin-top: 8px;
+      font-weight: bold;
+      font-size: 14px;
+    }
+
     .team-info { font-size: 20px; font-weight: 800; color: var(--accent-yellow); }
     .score-info { font-size: 28px; font-weight: 900; }
     .overs-info { font-size: 18px; color: #9ca3af; font-weight: 600; }
@@ -153,22 +164,22 @@
     <div class="admin-panel">
       <h2>🏏 Cricket Scorecard Controller</h2>
 
-      <div class="section-title">⚙️ Match Settings & Target</div>
+      <div class="section-title">⚙️ Match Settings & Innings</div>
       <div class="input-grid" style="margin-bottom: 10px;">
         <div>
           <label style="font-size: 12px; color: #9ca3af;">Total Overs</label>
           <input type="number" id="in-max-overs" placeholder="Total Overs" value="20" oninput="sync()">
         </div>
         <div>
-          <label style="font-size: 12px; color: #9ca3af;">Innings</label>
+          <label style="font-size: 12px; color: #9ca3af;">Innings Mode</label>
           <select id="in-innings" onchange="sync()">
             <option value="1">1st Innings</option>
             <option value="2">2nd Innings (Chasing)</option>
           </select>
         </div>
         <div style="grid-column: span 2;">
-          <label style="font-size: 12px; color: #9ca3af;">Target Runs (2nd Innings)</label>
-          <input type="number" id="in-target" placeholder="Target Score (e.g. 150)" value="0" oninput="sync()">
+          <label style="font-size: 12px; color: #9ca3af;">Target Runs (Auto-Calculated in 2nd Innings)</label>
+          <input type="number" id="in-target" placeholder="Target Score" value="0" oninput="sync()">
         </div>
       </div>
 
@@ -232,6 +243,7 @@
         <span id="out-need">NEED 0 OFF 0 BALLS</span>
         <span>RRR: <span id="out-rrr">0.00</span></span>
       </div>
+      <div class="status-row" id="status-banner" style="display: none;">MATCH FINISHED</div>
     </div>
   </div>
 
@@ -251,8 +263,68 @@
     
     let bowlerRuns = 0, bowlerWickets = 0, bowlerBalls = 0;
     let currentOverBalls = [];
+    let matchStatusText = "";
+
+    function checkInningsAutoSwitch() {
+      const maxOvers = parseInt(document.getElementById('in-max-overs').value) || 20;
+      const innings = document.getElementById('in-innings').value;
+      const totalMatchBalls = maxOvers * 6;
+
+      // 1st Innings End Condition: All overs done OR 10 wickets down
+      if (innings === "1" && (legalBalls >= totalMatchBalls || wickets >= 10)) {
+        const firstInningsScore = runs;
+        const autoTarget = firstInningsScore + 1;
+
+        alert(`1st Innings Over!\nFinal Score: ${runs}/${wickets}\nTarget for 2nd Innings: ${autoTarget}`);
+
+        // Auto Switch to 2nd Innings
+        document.getElementById('in-innings').value = "2";
+        document.getElementById('in-target').value = autoTarget;
+
+        // Swap Teams
+        const teamA = document.getElementById('in-team-a').value;
+        const teamB = document.getElementById('in-team-b').value;
+        document.getElementById('in-team-a').value = teamB;
+        document.getElementById('in-team-b').value = teamA;
+
+        // Reset match stats
+        runs = 0;
+        wickets = 0;
+        legalBalls = 0;
+        strikerRuns = 0; strikerBalls = 0;
+        nonStrikerRuns = 0; nonStrikerBalls = 0;
+        bowlerRuns = 0; bowlerWickets = 0; bowlerBalls = 0;
+        currentOverBalls = [];
+        
+        document.getElementById('in-striker').value = "Striker";
+        document.getElementById('in-non-striker').value = "Non-Striker";
+        document.getElementById('in-bowler').value = "Bowler Name";
+        matchStatusText = "";
+      }
+
+      // 2nd Innings Win / Loss / Finish Check
+      if (innings === "2") {
+        const target = parseInt(document.getElementById('in-target').value) || 0;
+        const chasingTeam = document.getElementById('in-team-a').value;
+        const defendingTeam = document.getElementById('in-team-b').value;
+
+        if (runs >= target && target > 0) {
+          const wicketsLeft = 10 - wickets;
+          matchStatusText = `🎉 ${chasingTeam} WON BY ${wicketsLeft} WICKETS!`;
+        } else if ((legalBalls >= totalMatchBalls || wickets >= 10) && runs < target - 1) {
+          const margin = (target - 1) - runs;
+          matchStatusText = `🎉 ${defendingTeam} WON BY ${margin} RUNS!`;
+        } else if ((legalBalls >= totalMatchBalls || wickets >= 10) && runs === target - 1) {
+          matchStatusText = `🤝 MATCH TIED!`;
+        } else {
+          matchStatusText = "";
+        }
+      }
+    }
 
     function sync(animType = "") {
+      checkInningsAutoSwitch();
+
       const overNum = Math.floor(legalBalls / 6);
       const ballNum = legalBalls % 6;
 
@@ -291,6 +363,7 @@
         needRuns: needRuns,
         remainingBalls: remainingBalls,
         rrr: rrr,
+        matchStatusText: matchStatusText,
         anim: animType,
         timestamp: Date.now()
       });
@@ -299,9 +372,7 @@
     function triggerAnim(type) { sync(type); }
 
     function onBowlerChange() {
-      bowlerRuns = 0;
-      bowlerWickets = 0;
-      bowlerBalls = 0;
+      bowlerRuns = 0; bowlerWickets = 0; bowlerBalls = 0;
       currentOverBalls = [];
       sync();
     }
@@ -312,22 +383,15 @@
       document.getElementById('in-striker').value = nsName;
       document.getElementById('in-non-striker').value = sName;
 
-      const tempR = strikerRuns;
-      const tempB = strikerBalls;
-      strikerRuns = nonStrikerRuns;
-      strikerBalls = nonStrikerBalls;
-      nonStrikerRuns = tempR;
-      nonStrikerBalls = tempB;
+      const tempR = strikerRuns; const tempB = strikerBalls;
+      strikerRuns = nonStrikerRuns; strikerBalls = nonStrikerBalls;
+      nonStrikerRuns = tempR; nonStrikerBalls = tempB;
     }
 
     function addBall(r, label) {
-      runs += r;
-      legalBalls++;
-      strikerRuns += r;
-      strikerBalls++;
-
-      bowlerRuns += r;
-      bowlerBalls++;
+      runs += r; legalBalls++;
+      strikerRuns += r; strikerBalls++;
+      bowlerRuns += r; bowlerBalls++;
       currentOverBalls.push(label);
 
       if (r % 2 !== 0) swapStrike();
@@ -335,35 +399,28 @@
         swapStrike();
         setTimeout(() => { currentOverBalls = []; sync(); }, 1500);
       }
-
       sync();
     }
 
     function addWicket() {
       if (wickets < 10) {
-        wickets++;
-        legalBalls++;
-        strikerBalls++;
-        bowlerWickets++;
-        bowlerBalls++;
+        wickets++; legalBalls++;
+        strikerBalls++; bowlerWickets++; bowlerBalls++;
         currentOverBalls.push('W');
 
-        strikerRuns = 0;
-        strikerBalls = 0;
+        strikerRuns = 0; strikerBalls = 0;
         document.getElementById('in-striker').value = "New Batsman";
 
         if (legalBalls % 6 === 0) {
           swapStrike();
           setTimeout(() => { currentOverBalls = []; sync(); }, 1500);
         }
-
         sync('wicket');
       }
     }
 
     function addExtra(type, label) {
-      runs += 1;
-      bowlerRuns += 1;
+      runs += 1; bowlerRuns += 1;
       currentOverBalls.push(label);
       sync();
     }
@@ -400,6 +457,14 @@
           document.getElementById('out-rrr').innerText = data.rrr || "0.00";
         } else {
           targetBanner.style.display = 'none';
+        }
+
+        const statusBanner = document.getElementById('status-banner');
+        if (data.matchStatusText && data.matchStatusText !== "") {
+          statusBanner.innerText = data.matchStatusText;
+          statusBanner.style.display = 'block';
+        } else {
+          statusBanner.style.display = 'none';
         }
 
         if (data.anim) {

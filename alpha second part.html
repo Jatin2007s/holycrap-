@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cricket Overlay Stream</title>
+  <style>
+    :root {
+      --accent-yellow: #facc15;
+      --four-color: #4ade80;
+      --six-color: #a78bfa;
+      --wicket-color: #f87171;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      background: transparent;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      color: #ffffff;
+      overflow: hidden;
+    }
+
+    .scorebar-container {
+      background: rgba(15, 23, 42, 0.95);
+      border-left: 6px solid var(--accent-yellow);
+      border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+      padding: 12px 20px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.8);
+      width: 100%;
+      max-width: 800px;
+      box-sizing: border-box;
+      transition: border-color 0.3s, background-color 0.3s;
+    }
+
+    .main-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(255,255,255,0.15);
+      padding-bottom: 6px;
+    }
+
+    .sub-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding-top: 6px;
+      font-size: 14px;
+      color: #d1d5db;
+    }
+
+    .team-info { font-size: 20px; font-weight: 800; color: var(--accent-yellow); }
+    .score-info { font-size: 28px; font-weight: 900; }
+    .overs-info { font-size: 18px; color: #9ca3af; font-weight: 600; }
+    .player-highlight { color: var(--accent-yellow); font-weight: bold; }
+    
+    .over-tracker {
+      font-size: 13px;
+      color: #38bdf8;
+      font-weight: bold;
+      margin-top: 2px;
+      letter-spacing: 1px;
+    }
+
+    @keyframes pulse-animation {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.03); }
+      100% { transform: scale(1); }
+    }
+
+    .scorebar-container.animate-four {
+      animation: pulse-animation 0.5s ease-in-out;
+      border-left-color: var(--four-color);
+      background-color: rgba(22, 163, 74, 0.9);
+    }
+
+    .scorebar-container.animate-six {
+      animation: pulse-animation 0.5s ease-in-out;
+      border-left-color: var(--six-color);
+      background-color: rgba(147, 51, 234, 0.9);
+    }
+
+    .scorebar-container.animate-wicket {
+      animation: pulse-animation 0.6s ease-in-out;
+      border-left-color: var(--wicket-color);
+      background-color: rgba(220, 38, 38, 0.95);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="scorebar-container" id="scorebar">
+    <div class="main-row">
+      <div class="team-info"><span id="out-team-a">TEAM A</span> vs <span id="out-team-b">TEAM B</span></div>
+      <div class="score-info">
+        <span id="runs">0</span>/<span id="wickets">0</span>
+      </div>
+      <div class="overs-info">
+        OVERS: <span id="overs">0.0</span>
+      </div>
+    </div>
+    <div class="sub-row">
+      <div>
+        BAT: <span class="player-highlight" id="out-striker">Striker* 0 (0)</span> | 
+        <span id="out-non-striker">Non-Striker 0 (0)</span>
+      </div>
+      <div style="text-align: right;">
+        BOWL: <span class="player-highlight" id="out-bowler">Bowler Name 0-0 (0.0)</span>
+        <div class="over-tracker" id="out-this-over">THIS OVER: [ - ]</div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+  <script>
+    const firebaseConfig = {
+      databaseURL: "https://betterone48-207a0-default-rtdb.asia-southeast1.firebasedatabase.app"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database().ref('matchState');
+    const scorebar = document.getElementById('scorebar');
+
+    db.on('value', (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        document.getElementById('out-team-a').innerText = data.teamA || 'TEAM A';
+        document.getElementById('out-team-b').innerText = data.teamB || 'TEAM B';
+        
+        document.getElementById('out-striker').innerText = `${data.strikerName || 'Striker'}* ${data.strikerRuns || 0} (${data.strikerBalls || 0})`;
+        document.getElementById('out-non-striker').innerText = `${data.nonStrikerName || 'Non-Striker'} ${data.nonStrikerRuns || 0} (${data.nonStrikerBalls || 0})`;
+        
+        document.getElementById('out-bowler').innerText = `${data.bowler || 'Bowler'} ${data.bowlerWickets || 0}-${data.bowlerRuns || 0} (${data.bowlerOvers || '0.0'})`;
+        document.getElementById('out-this-over').innerText = `THIS OVER: [ ${data.thisOver || '-'} ]`;
+
+        document.getElementById('runs').innerText = data.runs || 0;
+        document.getElementById('wickets').innerText = data.wickets || 0;
+        document.getElementById('overs').innerText = data.overs || "0.0";
+
+        if (data.anim) {
+          const animClass = `animate-${data.anim}`;
+          scorebar.classList.add(animClass);
+          setTimeout(() => {
+            scorebar.classList.remove(animClass);
+          }, 600);
+        }
+      }
+    });
+  </script>
+</body>
+</html>

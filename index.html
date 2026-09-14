@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cricket Scorecard Controller</title>
+  <title>Cricket Scorecard Controller - Protected</title>
   <style>
     :root {
       --bg-panel: #111827;
@@ -24,12 +24,71 @@
       color: var(--text-main);
     }
 
+    /* Passkey Lock Screen Modal */
+    .paywall-overlay {
+      position: fixed;
+      top: 0; left: 0; width: 100vw; height: 100vh;
+      background: rgba(11, 15, 25, 0.98);
+      backdrop-filter: blur(12px);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+    }
+
+    .paywall-card {
+      background: #1e293b;
+      border: 1px solid #374151;
+      border-radius: 16px;
+      padding: 30px;
+      max-width: 400px;
+      width: 90%;
+      text-align: center;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.8);
+    }
+
+    .paywall-card h2 { color: var(--accent-yellow); margin-top: 0; font-size: 22px; }
+    .paywall-card p { color: #9ca3af; font-size: 14px; line-height: 1.5; }
+
+    .key-input {
+      padding: 12px; border-radius: 8px; border: 1px solid #4b5563;
+      background: #0f172a; color: #fff; font-size: 16px; width: 100%;
+      box-sizing: border-box; text-align: center; font-weight: bold; margin: 15px 0;
+      letter-spacing: 2px;
+    }
+
+    .btn-unlock {
+      width: 100%; padding: 12px; background: var(--btn-green);
+      font-weight: bold; border-radius: 8px; border: none; color: #fff;
+      font-size: 16px; cursor: pointer; transition: 0.2s;
+    }
+    .btn-unlock:hover { background: #15803d; }
+
+    .purchase-box {
+      margin-top: 20px; padding-top: 15px; border-top: 1px dashed #374151;
+      display: flex; flex-direction: column; gap: 8px;
+    }
+
+    .btn-buy {
+      display: inline-block; width: 100%; padding: 10px; background: linear-gradient(135deg, #d97706, #b45309);
+      color: #fff; text-decoration: none; font-weight: bold; border-radius: 8px;
+      box-sizing: border-box; font-size: 13px; text-align: center;
+    }
+
     .container {
       max-width: 900px;
       margin: 0 auto;
       display: flex;
       flex-direction: column;
       gap: 20px;
+      filter: blur(6px);
+      pointer-events: none;
+      transition: filter 0.3s ease;
+    }
+
+    .app-unlocked {
+      filter: none !important;
+      pointer-events: auto !important;
     }
 
     .admin-panel {
@@ -135,7 +194,32 @@
 </head>
 <body>
 
-  <div class="container">
+  <!-- Passkey Lock Window -->
+  <div class="paywall-overlay" id="paywallModal">
+    <div class="paywall-card">
+      <h2>🔒 PRIVATE CONTROLLER</h2>
+      <p>Enter your Passkey below to unlock the Live Scorecard Controller.</p>
+      
+      <input type="password" id="accessKeyInput" class="key-input" placeholder="ENTER PASSKEY">
+      <button class="btn-unlock" onclick="verifyLicenseKey()">UNLOCK CONTROLLER</button>
+
+      <div class="purchase-box">
+        <p style="font-size: 12px; margin: 0 0 4px 0; color: #9ca3af;">Don't have a Passkey?</p>
+
+        <!-- Direct UPI Link for GPay/PhonePe/Paytm -->
+        <a href="upi://pay?pa=YOURUPIID@upi&pn=CricketScorecard&cu=INR" class="btn-buy" style="background: linear-gradient(135deg, #16a34a, #15803d);">
+          📱 PAY VIA UPI / GPAY / PHONEPE
+        </a>
+
+        <!-- WhatsApp Link -->
+        <a href="https://wa.me/?text=Hi!%20I%20want%20to%20get%20access%20to%20the%20Cricket%20Scorecard%20Controller" target="_blank" class="btn-buy">
+          💬 CONTACT ON WHATSAPP FOR PASSKEY
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div class="container" id="appContainer">
     <div class="admin-panel">
       <h2>🏏 Cricket Scorecard Controller</h2>
 
@@ -225,6 +309,34 @@
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
   <script>
+    // ALLOWED PASSKEYS ('1234' or 'CRICKET2026')
+    const ALLOWED_KEYS = ["1234", "CRICKET2026"];
+
+    function checkSavedLicense() {
+      const savedKey = localStorage.getItem('cricket_passkey');
+      if (ALLOWED_KEYS.includes(savedKey)) {
+        unlockApp();
+      }
+    }
+
+    function verifyLicenseKey() {
+      const enteredKey = document.getElementById('accessKeyInput').value.trim();
+      if (ALLOWED_KEYS.includes(enteredKey)) {
+        localStorage.setItem('cricket_passkey', enteredKey);
+        unlockApp();
+      } else {
+        alert("❌ Incorrect Passkey! Please enter the valid password.");
+      }
+    }
+
+    function unlockApp() {
+      document.getElementById('paywallModal').style.display = 'none';
+      document.getElementById('appContainer').classList.add('app-unlocked');
+    }
+
+    window.onload = checkSavedLicense;
+
+    // --- FIREBASE & SCORING SYSTEM ---
     const firebaseConfig = {
       databaseURL: "https://betterone48-207a0-default-rtdb.asia-southeast1.firebasedatabase.app"
     };

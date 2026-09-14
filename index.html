@@ -198,7 +198,7 @@
   <div class="paywall-overlay" id="paywallModal">
     <div class="paywall-card">
       <h2>🔒 PRIVATE CONTROLLER</h2>
-      <p>Enter your Passkey below to unlock the Live Scorecard Controller.</p>
+      <p>Enter your assigned Passkey to unlock your Match Controller.</p>
       
       <input type="password" id="accessKeyInput" class="key-input" placeholder="ENTER PASSKEY">
       <button class="btn-unlock" onclick="verifyLicenseKey()">UNLOCK CONTROLLER</button>
@@ -305,24 +305,59 @@
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
   <script>
-    // --- PASSKEY CONFIGURATION ---
-    const ALLOWED_KEYS = ["cricket07"];
+    // --- FIREBASE CONFIGURATION ---
+    const firebaseConfig = {
+      databaseURL: "https://betterone48-207a0-default-rtdb.asia-southeast1.firebasedatabase.app"
+    };
+    firebase.initializeApp(firebaseConfig);
 
+    let db = null;
+    let activeMatchId = null;
+
+    let runs = 0, wickets = 0, legalBalls = 0;
+    let strikerRuns = 0, strikerBalls = 0;
+    let nonStrikerRuns = 0, nonStrikerBalls = 0;
+    let bowlerRuns = 0, bowlerWickets = 0, bowlerBalls = 0;
+    let currentOverBalls = [];
+    let matchStatusText = "";
+
+    // --- DYNAMIC PASSKEY VERIFICATION ---
     function checkSavedLicense() {
       const savedKey = localStorage.getItem('cricket_passkey');
-      if (ALLOWED_KEYS.includes(savedKey)) {
+      const savedMatchId = localStorage.getItem('cricket_match_id');
+      if (savedKey && savedMatchId) {
+        initMatchDatabase(savedMatchId);
         unlockApp();
       }
     }
 
     function verifyLicenseKey() {
       const enteredKey = document.getElementById('accessKeyInput').value.trim();
-      if (ALLOWED_KEYS.includes(enteredKey)) {
-        localStorage.setItem('cricket_passkey', enteredKey);
-        unlockApp();
-      } else {
-        alert("❌ Incorrect Passkey! Please enter the valid password.");
+      if (!enteredKey) {
+        alert("Please enter a passkey!");
+        return;
       }
+
+      // Check passkey dynamically in Firebase Realtime Database
+      firebase.database().ref('passkeys/' + enteredKey).once('value')
+        .then((snapshot) => {
+          if (snapshot.exists()) {
+            const data = snapshot.val();
+            const matchId = data.matchId;
+
+            localStorage.setItem('cricket_passkey', enteredKey);
+            localStorage.setItem('cricket_match_id', matchId);
+
+            initMatchDatabase(matchId);
+            unlockApp();
+          } else {
+            alert("❌ Invalid Passkey! Please check and try again.");
+          }
+        })
+        .catch((err) => {
+          alert("Error verifying key. Please check connection.");
+          console.error(err);
+        });
     }
 
     function unlockApp() {
@@ -330,23 +365,54 @@
       document.getElementById('appContainer').classList.add('app-unlocked');
     }
 
+    function initMatchDatabase(matchId) {
+      activeMatchId = matchId;
+      db = firebase.database().ref('matches/' + matchId);
+
+      // Listen for data updates for this specific match
+      db.on('value', (snapshot) => {
+        const data = snapshot.val();
+        if (data) {
+          document.getElementById('out-team-a').innerText = data.teamA || 'TEAM A';
+          document.getElementById('out-team-b').innerText = data.teamB || 'TEAM B';
+          
+          document.getElementById('out-striker').innerText = `${data.strikerName || 'Striker'}* ${data.strikerRuns || 0} (${data.strikerBalls || 0})`;
+          document.getElementById('out-non-striker').innerText = `${data.nonStrikerName || 'Non-Striker'} ${data.nonStrikerRuns || 0} (${data.nonStrikerBalls || 0})`;
+          
+          document.getElementById('out-bowler').innerText = `${data.bowler || 'Bowler'} ${data.bowlerWickets || 0}-${data.bowlerRuns || 0} (${data.bowlerOvers || '0.0'})`;
+          document.getElementById('out-this-over').innerText = `THIS OVER: [ ${data.thisOver || '-'} ]`;
+
+          document.getElementById('runs').innerText = data.runs || 0;
+          document.getElementById('wickets').innerText = data.wickets || 0;
+          document.getElementById('overs').innerText = data.overs || "0.0";
+          document.getElementById('out-max-overs').innerText = data.maxOvers || 20;
+
+          const targetBanner = document.getElementById('target-banner');
+          if (data.innings === "2") {
+            targetBanner.style.display = 'flex';
+            document.getElementById('out-target').innerText = data.target || 0;
+            document.getElementById('out-need').innerText = `NEED ${data.needRuns || 0} OFF ${data.remainingBalls || 0} BALLS`;
+            document.getElementById('out-rrr').innerText = data.rrr || "0.00";
+          } else {
+            targetBanner.style.display = 'none';
+          }
+
+          const statusBanner = document.getElementById('status-banner');
+          if (data.matchStatusText && data.matchStatusText !== "") {
+            statusBanner.innerText = data.matchStatusText;
+            statusBanner.style.display = 'block';
+          } else {
+            statusBanner.style.display = 'none';
+          }
+        }
+      });
+
+      sync();
+    }
+
     window.onload = checkSavedLicense;
 
-    // --- FIREBASE & SCORING SYSTEM ---
-    const firebaseConfig = {
-      databaseURL: "https://betterone48-207a0-default-rtdb.asia-southeast1.firebasedatabase.app"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database().ref('matchState');
-
-    let runs = 0, wickets = 0, legalBalls = 0;
-    let strikerRuns = 0, strikerBalls = 0;
-    let nonStrikerRuns = 0, nonStrikerBalls = 0;
-    
-    let bowlerRuns = 0, bowlerWickets = 0, bowlerBalls = 0;
-    let currentOverBalls = [];
-    let matchStatusText = "";
-
+    // --- MATCH CONTROLLER ENGINE ---
     function checkInningsAutoSwitch() {
       const maxOvers = parseInt(document.getElementById('in-max-overs').value) || 20;
       const innings = document.getElementById('in-innings').value;
@@ -396,6 +462,7 @@
     }
 
     function sync(animType = "") {
+      if (!db) return;
       checkInningsAutoSwitch();
 
       const overNum = Math.floor(legalBalls / 6);
@@ -502,45 +569,6 @@
       if (type === 'balls') legalBalls = Math.max(0, legalBalls + amount);
       sync();
     }
-
-    db.on('value', (snapshot) => {
-      const data = snapshot.val();
-      if (data) {
-        document.getElementById('out-team-a').innerText = data.teamA || 'TEAM A';
-        document.getElementById('out-team-b').innerText = data.teamB || 'TEAM B';
-        
-        document.getElementById('out-striker').innerText = `${data.strikerName || 'Striker'}* ${data.strikerRuns || 0} (${data.strikerBalls || 0})`;
-        document.getElementById('out-non-striker').innerText = `${data.nonStrikerName || 'Non-Striker'} ${data.nonStrikerRuns || 0} (${data.nonStrikerBalls || 0})`;
-        
-        document.getElementById('out-bowler').innerText = `${data.bowler || 'Bowler'} ${data.bowlerWickets || 0}-${data.bowlerRuns || 0} (${data.bowlerOvers || '0.0'})`;
-        document.getElementById('out-this-over').innerText = `THIS OVER: [ ${data.thisOver || '-'} ]`;
-
-        document.getElementById('runs').innerText = data.runs || 0;
-        document.getElementById('wickets').innerText = data.wickets || 0;
-        document.getElementById('overs').innerText = data.overs || "0.0";
-        document.getElementById('out-max-overs').innerText = data.maxOvers || 20;
-
-        const targetBanner = document.getElementById('target-banner');
-        if (data.innings === "2") {
-          targetBanner.style.display = 'flex';
-          document.getElementById('out-target').innerText = data.target || 0;
-          document.getElementById('out-need').innerText = `NEED ${data.needRuns || 0} OFF ${data.remainingBalls || 0} BALLS`;
-          document.getElementById('out-rrr').innerText = data.rrr || "0.00";
-        } else {
-          targetBanner.style.display = 'none';
-        }
-
-        const statusBanner = document.getElementById('status-banner');
-        if (data.matchStatusText && data.matchStatusText !== "") {
-          statusBanner.innerText = data.matchStatusText;
-          statusBanner.style.display = 'block';
-        } else {
-          statusBanner.style.display = 'none';
-        }
-      }
-    });
-
-    sync();
   </script>
 </body>
 </html>

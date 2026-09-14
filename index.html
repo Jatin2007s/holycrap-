@@ -205,13 +205,9 @@
 
       <div class="purchase-box">
         <p style="font-size: 12px; margin: 0 0 4px 0; color: #9ca3af;">Don't have a Passkey?</p>
-
-        <!-- Direct UPI Link for GPay/PhonePe/Paytm -->
         <a href="upi://pay?pa=YOURUPIID@upi&pn=CricketScorecard&cu=INR" class="btn-buy" style="background: linear-gradient(135deg, #16a34a, #15803d);">
           📱 PAY VIA UPI / GPAY / PHONEPE
         </a>
-
-        <!-- WhatsApp Link -->
         <a href="https://wa.me/?text=Hi!%20I%20want%20to%20get%20access%20to%20the%20Cricket%20Scorecard%20Controller" target="_blank" class="btn-buy">
           💬 CONTACT ON WHATSAPP FOR PASSKEY
         </a>
@@ -309,8 +305,8 @@
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
   <script>
-    // ALLOWED PASSKEYS ('1234' or 'CRICKET2026')
-    const ALLOWED_KEYS = ["1234", "CRICKET2026"];
+    // --- PASSKEY CONFIGURATION ---
+    const ALLOWED_KEYS = ["cricket07"];
 
     function checkSavedLicense() {
       const savedKey = localStorage.getItem('cricket_passkey');

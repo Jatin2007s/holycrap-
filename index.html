@@ -42,7 +42,8 @@
       display: flex; flex-direction: column; align-items: center; gap: 10px;
     }
     .payment-box img {
-      width: 160px; height: 160px; border-radius: 8px; border: 2px solid #444;
+      width: 180px; height: 180px; border-radius: 8px; border: 2px solid #444;
+      background: #fff; padding: 5px;
     }
     .upi-id {
       font-size: 0.85rem; color: #4caf50; font-weight: bold; background: #1a2e1a;
@@ -97,11 +98,10 @@
 
       <!-- PAYMENT / UPI SECTION -->
       <div class="payment-box">
-        <p style="font-size: 0.8rem; color: var(--text-muted);">Need a passkey? Scan QR to Pay</p>
-        <!-- Replace the src below with your actual UPI QR code image link -->
-        <img src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=upi://pay?pa=YOUR_UPI_ID_HERE%26pn=CricketScore" alt="Payment QR Code">
-        <div class="upi-id">UPI ID: <span>your-upi-id@upi</span></div>
-        <p style="font-size: 0.75rem; color: #888;">Send payment screenshot to admin to receive key.</p>
+        <p style="font-size: 0.8rem; color: var(--text-muted);">Need a passkey? Scan QR with any UPI App</p>
+        <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=upi%3A%2F%2Fpay%3Fpa%3D920156929%40ibl%26pn%3DBank%2520Of%2520India%26cu%3DINR" alt="UPI QR Code">
+        <div class="upi-id">UPI ID: <span>920156929@ibl</span></div>
+        <p style="font-size: 0.75rem; color: #888;">Send payment screenshot to admin to get your key.</p>
       </div>
     </div>
   </div>

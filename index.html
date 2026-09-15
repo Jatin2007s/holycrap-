@@ -1,308 +1,4 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cricket Scorecard Controller - Protected</title>
-  <style>
-    :root {
-      --bg-panel: #111827;
-      --text-main: #ffffff;
-      --accent-yellow: #facc15;
-      --btn-blue: #2563eb;
-      --btn-green: #16a34a;
-      --btn-purple: #9333ea;
-      --btn-red: #dc2626;
-      --btn-gray: #4b5563;
-    }
-
-    body {
-      margin: 0;
-      padding: 15px;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background-color: #0b0f19;
-      color: var(--text-main);
-    }
-
-    /* Passkey Lock Screen Modal */
-    .paywall-overlay {
-      position: fixed;
-      top: 0; left: 0; width: 100vw; height: 100vh;
-      background: rgba(11, 15, 25, 0.98);
-      backdrop-filter: blur(12px);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      z-index: 9999;
-    }
-
-    .paywall-card {
-      background: #1e293b;
-      border: 1px solid #374151;
-      border-radius: 16px;
-      padding: 30px;
-      max-width: 400px;
-      width: 90%;
-      text-align: center;
-      box-shadow: 0 20px 40px rgba(0,0,0,0.8);
-    }
-
-    .paywall-card h2 { color: var(--accent-yellow); margin-top: 0; font-size: 22px; }
-    .paywall-card p { color: #9ca3af; font-size: 14px; line-height: 1.5; }
-
-    .key-input {
-      padding: 12px; border-radius: 8px; border: 1px solid #4b5563;
-      background: #0f172a; color: #fff; font-size: 16px; width: 100%;
-      box-sizing: border-box; text-align: center; font-weight: bold; margin: 15px 0;
-      letter-spacing: 2px;
-    }
-
-    .btn-unlock {
-      width: 100%; padding: 12px; background: var(--btn-green);
-      font-weight: bold; border-radius: 8px; border: none; color: #fff;
-      font-size: 16px; cursor: pointer; transition: 0.2s;
-    }
-    .btn-unlock:hover { background: #15803d; }
-
-    .purchase-box {
-      margin-top: 20px; padding-top: 15px; border-top: 1px dashed #374151;
-      display: flex; flex-direction: column; gap: 8px;
-    }
-
-    .btn-buy {
-      display: inline-block; width: 100%; padding: 10px; background: linear-gradient(135deg, #d97706, #b45309);
-      color: #fff; text-decoration: none; font-weight: bold; border-radius: 8px;
-      box-sizing: border-box; font-size: 13px; text-align: center;
-    }
-
-    .container {
-      max-width: 900px;
-      margin: 0 auto;
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
-      filter: blur(6px);
-      pointer-events: none;
-      transition: filter 0.3s ease;
-    }
-
-    .app-unlocked {
-      filter: none !important;
-      pointer-events: auto !important;
-    }
-
-    .admin-panel {
-      padding: 20px;
-      background: var(--bg-panel);
-      border-radius: 12px;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-    }
-
-    .admin-panel h2 { margin-top: 0; text-align: center; color: var(--accent-yellow); }
-    .section-title { font-size: 13px; color: #9ca3af; margin: 15px 0 6px 0; text-transform: uppercase; letter-spacing: 1px; }
-
-    .input-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
-    input, select {
-      padding: 10px; border-radius: 6px; border: 1px solid #374151;
-      background: #1f2937; color: #fff; font-size: 14px; width: 100%; box-sizing: border-box;
-    }
-
-    .grid-buttons, .manual-controls { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-
-    button {
-      padding: 12px; font-size: 15px; font-weight: bold; border: none;
-      border-radius: 8px; cursor: pointer; color: #fff; background: var(--btn-blue);
-      transition: transform 0.1s;
-    }
-    button:active { transform: scale(0.95); }
-
-    .btn-dot { background: var(--btn-gray); }
-    .btn-four { background: var(--btn-green); }
-    .btn-six { background: var(--btn-purple); }
-    .btn-wicket { background: var(--btn-red); }
-    .btn-extra { background: #d97706; }
-    .btn-strike { background: #0284c7; grid-column: span 3; }
-    .btn-manual { background: #374151; border: 1px solid #4b5563; }
-
-    .scorebar-container {
-      background: rgba(15, 23, 42, 0.95);
-      border-left: 5px solid var(--accent-yellow);
-      border-radius: 8px;
-      display: flex;
-      flex-direction: column;
-      padding: 12px 20px;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.8);
-      position: relative;
-    }
-
-    .main-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      border-bottom: 1px solid rgba(255,255,255,0.1);
-      padding-bottom: 6px;
-    }
-
-    .sub-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      padding-top: 6px;
-      font-size: 14px;
-      color: #d1d5db;
-    }
-
-    .target-row {
-      background: rgba(234, 179, 8, 0.15);
-      border-top: 1px solid rgba(250, 204, 21, 0.3);
-      margin-top: 8px;
-      padding: 4px 10px;
-      border-radius: 4px;
-      font-size: 13px;
-      font-weight: bold;
-      color: var(--accent-yellow);
-      display: flex;
-      justify-content: space-between;
-    }
-
-    .winner-banner {
-      background: linear-gradient(135deg, #16a34a, #15803d);
-      color: #ffffff;
-      text-align: center;
-      padding: 10px;
-      border-radius: 6px;
-      margin-top: 10px;
-      font-weight: 900;
-      font-size: 16px;
-      box-shadow: 0 4px 15px rgba(22, 163, 74, 0.4);
-      letter-spacing: 1px;
-    }
-
-    .team-info { font-size: 20px; font-weight: 800; color: var(--accent-yellow); }
-    .score-info { font-size: 28px; font-weight: 900; }
-    .overs-info { font-size: 18px; color: #9ca3af; font-weight: 600; }
-    .player-highlight { color: var(--accent-yellow); font-weight: bold; }
-    
-    .over-tracker {
-      font-size: 13px;
-      color: #38bdf8;
-      font-weight: bold;
-      margin-top: 2px;
-      letter-spacing: 1px;
-    }
-  </style>
-</head>
-<body>
-
-  <!-- Passkey Lock Window -->
-  <div class="paywall-overlay" id="paywallModal">
-    <div class="paywall-card">
-      <h2>🔒 PRIVATE CONTROLLER</h2>
-      <p>Enter your assigned Passkey to unlock your Match Controller.</p>
-      
-      <input type="password" id="accessKeyInput" class="key-input" placeholder="ENTER PASSKEY">
-      <button class="btn-unlock" onclick="verifyLicenseKey()">UNLOCK CONTROLLER</button>
-
-      <div class="purchase-box">
-        <p style="font-size: 12px; margin: 0 0 4px 0; color: #9ca3af;">Don't have a Passkey? Pay ₹250 to get access:</p>
-        <a href="upi://pay?pa=9201565929@ibl&pn=Cricket%20Scorecard&am=250&cu=INR&tn=Scorecard%20Passkey" class="btn-buy" style="background: linear-gradient(135deg, #16a34a, #15803d);">
-          📱 PAY ₹250 VIA UPI (GPAY / PHONEPE / PAYTM)
-        </a>
-        <a href="https://wa.me/919201565929?text=Hi!%20I%20have%20paid%20Rs.250%20for%20the%20Cricket%20Scorecard%20Controller.%20Please%20send%20me%20the%20Passkey." target="_blank" class="btn-buy">
-          💬 CONTACT ON WHATSAPP FOR PASSKEY
-        </a>
-      </div>
-    </div>
-  </div>
-
-  <div class="container" id="appContainer">
-    <div class="admin-panel">
-      <h2>🏏 Cricket Scorecard Controller</h2>
-
-      <div class="section-title">⚙️ Match Settings & Innings</div>
-      <div class="input-grid" style="margin-bottom: 10px;">
-        <div>
-          <label style="font-size: 12px; color: #9ca3af;">Total Overs</label>
-          <input type="number" id="in-max-overs" placeholder="Total Overs" value="20" oninput="sync()">
-        </div>
-        <div>
-          <label style="font-size: 12px; color: #9ca3af;">Innings Mode</label>
-          <select id="in-innings" onchange="sync()">
-            <option value="1">1st Innings</option>
-            <option value="2">2nd Innings (Chasing)</option>
-          </select>
-        </div>
-        <div style="grid-column: span 2;">
-          <label style="font-size: 12px; color: #9ca3af;">Target Runs (2nd Innings)</label>
-          <input type="number" id="in-target" placeholder="Target Score" value="0" oninput="sync()">
-        </div>
-      </div>
-
-      <div class="section-title">📝 Teams & Players</div>
-      <div class="input-grid">
-        <input type="text" id="in-team-a" placeholder="Batting Team" value="TEAM A" oninput="sync()">
-        <input type="text" id="in-team-b" placeholder="Bowling Team" value="TEAM B" oninput="sync()">
-        <input type="text" id="in-striker" placeholder="Striker Name" value="Striker" oninput="sync()">
-        <input type="text" id="in-non-striker" placeholder="Non-Striker Name" value="Non-Striker" oninput="sync()">
-        <input type="text" id="in-bowler" placeholder="Current Bowler" value="Bowler Name" onchange="onBowlerChange()" style="grid-column: span 2;">
-      </div>
-      
-      <div class="section-title">⚡ Quick Actions</div>
-      <div class="grid-buttons">
-        <button class="btn-dot" onclick="addBall(0, '0')">0 (Dot Ball)</button>
-        <button onclick="addBall(1, '1')">+1 Run</button>
-        <button onclick="addBall(2, '2')">+2 Runs</button>
-        <button onclick="addBall(3, '3')">+3 Runs</button>
-        <button class="btn-four" onclick="addBall(4, '4', 'FOUR')">4️⃣ FOUR</button>
-        <button class="btn-six" onclick="addBall(6, '6', 'SIX')">6️⃣ SIX</button>
-        <button class="btn-wicket" onclick="addWicket()">☝️ WICKET</button>
-        <button class="btn-extra" onclick="addExtra('wide', 'WD')">Wide (+1)</button>
-        <button class="btn-extra" onclick="addExtra('noball', 'NB')">No Ball (+1)</button>
-        <button class="btn-strike" onclick="swapStrike()">🔄 Rotate Strike Manually</button>
-      </div>
-
-      <div class="section-title">🛠️ Manual Score Adjustments</div>
-      <div class="manual-controls">
-        <button class="btn-manual" onclick="manualAdjust('runs', 1)">+1 Team Run</button>
-        <button class="btn-manual" onclick="manualAdjust('runs', -1)">-1 Team Run</button>
-        <button class="btn-manual" onclick="manualAdjust('balls', 1)">+1 Ball</button>
-        <button class="btn-manual" onclick="manualAdjust('balls', -1)">-1 Ball</button>
-        <button class="btn-manual" onclick="manualAdjust('wickets', 1)">+1 Wicket</button>
-        <button class="btn-manual" onclick="manualAdjust('wickets', -1)">-1 Wicket</button>
-      </div>
-    </div>
-
-    <!-- Live Preview -->
-    <div class="scorebar-container" id="scorebar">
-      <div class="main-row">
-        <div class="team-info"><span id="out-team-a">TEAM A</span> vs <span id="out-team-b">TEAM B</span></div>
-        <div class="score-info">
-          <span id="runs">0</span>/<span id="wickets">0</span>
-        </div>
-        <div class="overs-info">
-          OVERS: <span id="overs">0.0</span> / <span id="out-max-overs">20</span>
-        </div>
-      </div>
-      <div class="sub-row">
-        <div>
-          BAT: <span class="player-highlight" id="out-striker">Striker* 0 (0)</span> | 
-          <span id="out-non-striker">Non-Striker 0 (0)</span>
-        </div>
-        <div style="text-align: right;">
-          BOWL: <span class="player-highlight" id="out-bowler">Bowler Name 0-0 (0.0)</span>
-          <div class="over-tracker" id="out-this-over">THIS OVER: [ - ]</div>
-        </div>
-      </div>
-      <div class="target-row" id="target-banner" style="display: none;">
-        <span>TARGET: <span id="out-target">0</span></span>
-        <span id="out-need">NEED 0 OFF 0 BALLS</span>
-        <span>RRR: <span id="out-rrr">0.00</span></span>
-      </div>
-      <div class="winner-banner" id="status-banner" style="display: none;">🏆 MATCH FINISHED</div>
-    </div>
-  </div>
-
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
   <script>
     // --- FIREBASE CONFIGURATION ---
@@ -321,12 +17,19 @@
     let currentOverBalls = [];
     let matchStatusText = "";
 
-    // --- DYNAMIC PASSKEY VERIFICATION ---
+    // --- AUTOMATIC CLEANUP OF OLD BAD DATA ---
     function checkSavedLicense() {
       const savedKey = localStorage.getItem('cricket_passkey');
       const savedMatchId = localStorage.getItem('cricket_match_id');
 
-      if (savedKey && savedMatchId && savedMatchId !== "undefined") {
+      // Clear broken cache
+      if (!savedMatchId || savedMatchId === "undefined" || savedMatchId === "null") {
+        localStorage.removeItem('cricket_passkey');
+        localStorage.removeItem('cricket_match_id');
+        return;
+      }
+
+      if (savedKey && savedMatchId) {
         initMatchDatabase(savedMatchId);
         unlockApp();
       }
@@ -341,28 +44,31 @@
 
       firebase.database().ref('passkeys/' + enteredKey).once('value')
         .then((snapshot) => {
+          let targetMatchId = 'match_1'; // Safe default
+
           if (snapshot.exists()) {
             const data = snapshot.val();
-            
-            let targetMatchId = 'match_1';
             if (typeof data === 'string' && data.trim() !== '') {
-              targetMatchId = data;
+              targetMatchId = data.trim();
             } else if (typeof data === 'object' && data !== null && data.matchId) {
               targetMatchId = data.matchId;
             }
-
-            localStorage.setItem('cricket_passkey', enteredKey);
-            localStorage.setItem('cricket_match_id', targetMatchId);
-
-            initMatchDatabase(targetMatchId);
-            unlockApp();
           } else {
-            alert("❌ Invalid Passkey! Please check and try again.");
+            // If the key isn't in Firebase, default to match_1 instead of undefined
+            alert("Passkey not mapped in database. Defaulting to match_1");
           }
+
+          localStorage.setItem('cricket_passkey', enteredKey);
+          localStorage.setItem('cricket_match_id', targetMatchId);
+
+          initMatchDatabase(targetMatchId);
+          unlockApp();
         })
         .catch((err) => {
-          alert("Error verifying key. Please check connection.");
           console.error(err);
+          // Hard fallback so it NEVER creates undefined
+          initMatchDatabase('match_1');
+          unlockApp();
         });
     }
 
@@ -372,7 +78,8 @@
     }
 
     function initMatchDatabase(matchId) {
-      if (!matchId || matchId === "undefined") {
+      // Force match_1 if anything invalid is passed
+      if (!matchId || matchId === "undefined" || matchId === "null" || matchId.trim() === "") {
         matchId = 'match_1';
       }
       
@@ -421,7 +128,6 @@
 
     window.onload = checkSavedLicense;
 
-    // --- MATCH CONTROLLER ENGINE ---
     function checkInningsAutoSwitch() {
       const maxOvers = parseInt(document.getElementById('in-max-overs').value) || 20;
       const innings = document.getElementById('in-innings').value;
@@ -471,7 +177,13 @@
     }
 
     function sync(animType = "") {
-      const matchKey = (activeMatchId && activeMatchId !== "undefined") ? activeMatchId : 'match_1';
+      // Strict fallback check inside sync
+      let matchKey = activeMatchId;
+      if (!matchKey || matchKey === "undefined" || matchKey === "null") {
+        matchKey = 'match_1';
+        activeMatchId = 'match_1';
+      }
+
       db = firebase.database().ref('matches/' + matchKey);
       
       checkInningsAutoSwitch();
@@ -582,5 +294,3 @@
       sync();
     }
   </script>
-</body>
-</html>

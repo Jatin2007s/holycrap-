@@ -16,22 +16,37 @@
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-    body { background-color: var(--bg-dark); color: var(--text-main); padding: 15px; display: block; }
-    .container { max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; gap: 15px; }
+    body { background-color: var(--bg-dark); color: var(--text-main); padding: 15px; }
+    .container { max-width: 800px; margin: 0 auto; display: none; flex-direction: column; gap: 15px; }
 
     /* Modal / Paywall */
     #paywallModal {
       position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(0, 0, 0, 0.85); display: flex; align-items: center;
+      background: rgba(0, 0, 0, 0.9); display: flex; align-items: center;
       justify-content: center; z-index: 1000;
     }
     .modal-card {
       background: var(--card-bg); padding: 25px; border-radius: 12px;
-      text-align: center; max-width: 350px; width: 90%; border: 1px solid #333;
+      text-align: center; max-width: 380px; width: 90%; border: 1px solid #333;
+      box-shadow: 0px 8px 24px rgba(0, 0, 0, 0.5);
     }
     .modal-card input {
-      width: 100%; padding: 10px; margin: 15px 0; border-radius: 6px;
+      width: 100%; padding: 10px; margin: 12px 0; border-radius: 6px;
       border: 1px solid #444; background: #2a2a2a; color: #fff; text-align: center;
+      font-size: 1rem;
+    }
+
+    /* Payment Box */
+    .payment-box {
+      margin-top: 15px; padding-top: 15px; border-top: 1px solid #333;
+      display: flex; flex-direction: column; align-items: center; gap: 10px;
+    }
+    .payment-box img {
+      width: 160px; height: 160px; border-radius: 8px; border: 2px solid #444;
+    }
+    .upi-id {
+      font-size: 0.85rem; color: #4caf50; font-weight: bold; background: #1a2e1a;
+      padding: 6px 12px; border-radius: 20px; border: 1px solid #2e7d32;
     }
 
     /* Cards Layout */
@@ -71,12 +86,23 @@
 </head>
 <body>
 
-  <!-- PASSKEY MODAL -->
+  <!-- PASSKEY & PAYMENT MODAL -->
   <div id="paywallModal">
     <div class="modal-card">
-      <h3>Enter Passkey</h3>
+      <h3 style="margin-bottom: 10px;">Cricket Controller Access</h3>
+      <p style="font-size: 0.85rem; color: var(--text-muted);">Enter Passkey to unlock scoring controls</p>
+      
       <input type="text" id="accessKeyInput" placeholder="Enter Access Key">
       <button class="btn-green" style="width:100%;" onclick="verifyLicenseKey()">UNLOCK CONTROLLER</button>
+
+      <!-- PAYMENT / UPI SECTION -->
+      <div class="payment-box">
+        <p style="font-size: 0.8rem; color: var(--text-muted);">Need a passkey? Scan QR to Pay</p>
+        <!-- Replace the src below with your actual UPI QR code image link -->
+        <img src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=upi://pay?pa=YOUR_UPI_ID_HERE%26pn=CricketScore" alt="Payment QR Code">
+        <div class="upi-id">UPI ID: <span>your-upi-id@upi</span></div>
+        <p style="font-size: 0.75rem; color: #888;">Send payment screenshot to admin to receive key.</p>
+      </div>
     </div>
   </div>
 
@@ -172,6 +198,8 @@
       <button class="btn-dark" onclick="manualAdjust('balls', -1)">-1 Ball (Manual)</button>
     </div>
 
+    <button class="btn-red" style="width: 100%; margin-top: 10px;" onclick="logout()">LOGOUT SESSION</button>
+
   </div>
 
   <!-- FIREBASE SDKs -->
@@ -179,7 +207,9 @@
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
   <script>
-    // --- FIREBASE CONFIGURATION ---
+    // System version lock: Increment this tag to force-logout everyone globally
+    const SYSTEM_AUTH_VERSION = "v2_reset";
+
     const firebaseConfig = {
       databaseURL: "https://betterone48-207a0-default-rtdb.asia-southeast1.firebasedatabase.app"
     };
@@ -196,23 +226,23 @@
     let matchStatusText = "";
 
     function checkSavedLicense() {
-      const savedKey = localStorage.getItem('cricket_passkey');
-      const savedMatchId = localStorage.getItem('cricket_match_id');
+      const savedVersion = localStorage.getItem('cricket_auth_version');
 
-      if (!savedMatchId || savedMatchId === "undefined" || savedMatchId === "null") {
-        localStorage.removeItem('cricket_passkey');
-        localStorage.removeItem('cricket_match_id');
-        unlockApp(); // Default unhide
-        initMatchDatabase('match_1');
+      if (savedVersion !== SYSTEM_AUTH_VERSION) {
+        localStorage.clear();
+        localStorage.setItem('cricket_auth_version', SYSTEM_AUTH_VERSION);
+        lockApp();
         return;
       }
 
-      if (savedKey && savedMatchId) {
+      const savedKey = localStorage.getItem('cricket_passkey');
+      const savedMatchId = localStorage.getItem('cricket_match_id');
+
+      if (savedKey && savedMatchId && savedMatchId !== "undefined" && savedMatchId !== "null") {
         initMatchDatabase(savedMatchId);
         unlockApp();
       } else {
-        unlockApp();
-        initMatchDatabase('match_1');
+        lockApp();
       }
     }
 
@@ -225,30 +255,38 @@
 
       firebase.database().ref('passkeys/' + enteredKey).once('value')
         .then((snapshot) => {
-          let targetMatchId = 'match_1';
-
           if (snapshot.exists()) {
+            let targetMatchId = 'match_1';
             const data = snapshot.val();
+
             if (typeof data === 'string' && data.trim() !== '') {
               targetMatchId = data.trim();
             } else if (typeof data === 'object' && data !== null && data.matchId) {
               targetMatchId = data.matchId;
             }
+
+            localStorage.setItem('cricket_passkey', enteredKey);
+            localStorage.setItem('cricket_match_id', targetMatchId);
+            localStorage.setItem('cricket_auth_version', SYSTEM_AUTH_VERSION);
+
+            initMatchDatabase(targetMatchId);
+            unlockApp();
           } else {
-            alert("Passkey not mapped in database. Defaulting to match_1");
+            alert("Invalid or revoked passkey!");
           }
-
-          localStorage.setItem('cricket_passkey', enteredKey);
-          localStorage.setItem('cricket_match_id', targetMatchId);
-
-          initMatchDatabase(targetMatchId);
-          unlockApp();
         })
         .catch((err) => {
           console.error(err);
-          initMatchDatabase('match_1');
-          unlockApp();
+          alert("Error verifying key.");
         });
+    }
+
+    function lockApp() {
+      const modal = document.getElementById('paywallModal');
+      if (modal) modal.style.display = 'flex';
+
+      const app = document.getElementById('appContainer');
+      if (app) app.style.display = 'none';
     }
 
     function unlockApp() {
@@ -257,6 +295,11 @@
 
       const app = document.getElementById('appContainer');
       if (app) app.style.display = 'flex';
+    }
+
+    function logout() {
+      localStorage.clear();
+      location.reload();
     }
 
     function initMatchDatabase(matchId) {

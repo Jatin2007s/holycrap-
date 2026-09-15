@@ -312,7 +312,7 @@
     firebase.initializeApp(firebaseConfig);
 
     let db = null;
-    let activeMatchId = null;
+    let activeMatchId = 'match_1'; // Default fallback match ID
 
     let runs = 0, wickets = 0, legalBalls = 0;
     let strikerRuns = 0, strikerBalls = 0;
@@ -343,7 +343,8 @@
         .then((snapshot) => {
           if (snapshot.exists()) {
             const data = snapshot.val();
-            const matchId = data.matchId;
+            // Handle both string format ("match_1") or object format ({ matchId: "match_1" })
+            const matchId = (typeof data === 'string') ? data : (data.matchId || 'match_1');
 
             localStorage.setItem('cricket_passkey', enteredKey);
             localStorage.setItem('cricket_match_id', matchId);
@@ -366,8 +367,8 @@
     }
 
     function initMatchDatabase(matchId) {
-      activeMatchId = matchId;
-      db = firebase.database().ref('matches/' + matchId);
+      activeMatchId = matchId || 'match_1';
+      db = firebase.database().ref('matches/' + activeMatchId);
 
       // Listen for data updates for this specific match
       db.on('value', (snapshot) => {
@@ -382,8 +383,8 @@
           document.getElementById('out-bowler').innerText = `${data.bowler || 'Bowler'} ${data.bowlerWickets || 0}-${data.bowlerRuns || 0} (${data.bowlerOvers || '0.0'})`;
           document.getElementById('out-this-over').innerText = `THIS OVER: [ ${data.thisOver || '-'} ]`;
 
-          document.getElementById('runs').innerText = data.runs || 0;
-          document.getElementById('wickets').innerText = data.wickets || 0;
+          document.getElementById('runs').innerText = data.runs !== undefined ? data.runs : 0;
+          document.getElementById('wickets').innerText = data.wickets !== undefined ? data.wickets : 0;
           document.getElementById('overs').innerText = data.overs || "0.0";
           document.getElementById('out-max-overs').innerText = data.maxOvers || 20;
 
@@ -462,7 +463,9 @@
     }
 
     function sync(animType = "") {
-      if (!db) return;
+      const matchKey = activeMatchId || 'match_1';
+      db = firebase.database().ref('matches/' + matchKey);
+      
       checkInningsAutoSwitch();
 
       const overNum = Math.floor(legalBalls / 6);
@@ -504,7 +507,7 @@
         remainingBalls: remainingBalls,
         rrr: rrr,
         matchStatusText: matchStatusText,
-        anim: animType,
+        lastEvent: animType,
         animId: Date.now()
       });
     }
@@ -524,6 +527,7 @@
       const tempR = strikerRuns; const tempB = strikerBalls;
       strikerRuns = nonStrikerRuns; strikerBalls = nonStrikerBalls;
       nonStrikerRuns = tempR; nonStrikerBalls = tempB;
+      sync();
     }
 
     function addBall(r, label, animTag = "") {

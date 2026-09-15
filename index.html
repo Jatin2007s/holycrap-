@@ -312,7 +312,7 @@
     firebase.initializeApp(firebaseConfig);
 
     let db = null;
-    let activeMatchId = 'match_1'; // Default fallback match ID
+    let activeMatchId = 'match_1';
 
     let runs = 0, wickets = 0, legalBalls = 0;
     let strikerRuns = 0, strikerBalls = 0;
@@ -325,7 +325,8 @@
     function checkSavedLicense() {
       const savedKey = localStorage.getItem('cricket_passkey');
       const savedMatchId = localStorage.getItem('cricket_match_id');
-      if (savedKey && savedMatchId) {
+
+      if (savedKey && savedMatchId && savedMatchId !== "undefined") {
         initMatchDatabase(savedMatchId);
         unlockApp();
       }
@@ -338,18 +339,22 @@
         return;
       }
 
-      // Check passkey dynamically in Firebase Realtime Database
       firebase.database().ref('passkeys/' + enteredKey).once('value')
         .then((snapshot) => {
           if (snapshot.exists()) {
             const data = snapshot.val();
-            // Handle both string format ("match_1") or object format ({ matchId: "match_1" })
-            const matchId = (typeof data === 'string') ? data : (data.matchId || 'match_1');
+            
+            let targetMatchId = 'match_1';
+            if (typeof data === 'string' && data.trim() !== '') {
+              targetMatchId = data;
+            } else if (typeof data === 'object' && data !== null && data.matchId) {
+              targetMatchId = data.matchId;
+            }
 
             localStorage.setItem('cricket_passkey', enteredKey);
-            localStorage.setItem('cricket_match_id', matchId);
+            localStorage.setItem('cricket_match_id', targetMatchId);
 
-            initMatchDatabase(matchId);
+            initMatchDatabase(targetMatchId);
             unlockApp();
           } else {
             alert("❌ Invalid Passkey! Please check and try again.");
@@ -367,10 +372,13 @@
     }
 
     function initMatchDatabase(matchId) {
-      activeMatchId = matchId || 'match_1';
+      if (!matchId || matchId === "undefined") {
+        matchId = 'match_1';
+      }
+      
+      activeMatchId = matchId;
       db = firebase.database().ref('matches/' + activeMatchId);
 
-      // Listen for data updates for this specific match
       db.on('value', (snapshot) => {
         const data = snapshot.val();
         if (data) {
@@ -463,7 +471,7 @@
     }
 
     function sync(animType = "") {
-      const matchKey = activeMatchId || 'match_1';
+      const matchKey = (activeMatchId && activeMatchId !== "undefined") ? activeMatchId : 'match_1';
       db = firebase.database().ref('matches/' + matchKey);
       
       checkInningsAutoSwitch();

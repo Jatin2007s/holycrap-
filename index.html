@@ -23,12 +23,12 @@
     #paywallModal {
       position: fixed; top: 0; left: 0; width: 100%; height: 100%;
       background: rgba(0, 0, 0, 0.9); display: flex; align-items: center;
-      justify-content: center; z-index: 1000;
+      justify-content: center; z-index: 1000; overflow-y: auto; padding: 20px 0;
     }
     .modal-card {
       background: var(--card-bg); padding: 25px; border-radius: 12px;
       text-align: center; max-width: 380px; width: 90%; border: 1px solid #333;
-      box-shadow: 0px 8px 24px rgba(0, 0, 0, 0.5);
+      box-shadow: 0px 8px 24px rgba(0, 0, 0, 0.5); margin: auto;
     }
     .modal-card input {
       width: 100%; padding: 10px; margin: 12px 0; border-radius: 6px;
@@ -36,18 +36,39 @@
       font-size: 1rem;
     }
 
-    /* Payment Box */
+    /* Payment Box & App Buttons */
     .payment-box {
       margin-top: 15px; padding-top: 15px; border-top: 1px solid #333;
-      display: flex; flex-direction: column; align-items: center; gap: 10px;
+      display: flex; flex-direction: column; align-items: center; gap: 12px;
     }
     .payment-box img {
-      width: 180px; height: 180px; border-radius: 8px; border: 2px solid #444;
+      width: 160px; height: 160px; border-radius: 8px; border: 2px solid #444;
       background: #fff; padding: 5px;
     }
     .upi-id {
       font-size: 0.85rem; color: #4caf50; font-weight: bold; background: #1a2e1a;
       padding: 6px 12px; border-radius: 20px; border: 1px solid #2e7d32;
+    }
+    .price-tag {
+      font-size: 1.1rem; font-weight: bold; color: #ffca28;
+    }
+
+    .app-buttons {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%; margin-top: 5px;
+    }
+    .pay-app-btn {
+      padding: 10px; font-size: 0.85rem; border-radius: 6px; font-weight: bold;
+      text-decoration: none; text-align: center; color: #fff; display: block;
+    }
+    .btn-phonepe { background: #5f259f; }
+    .btn-gpay { background: #1a73e8; }
+    .btn-paytm { background: #00baf2; color: #002e6e; }
+    .btn-bhim { background: #ff6f00; }
+    .btn-whatsapp { background: #25d366; color: #fff; width: 100%; text-decoration: none; display: block; padding: 10px; border-radius: 6px; font-weight: bold; font-size: 0.9rem; }
+
+    .disclaimer {
+      font-size: 0.75rem; color: #e57373; background: rgba(198, 40, 40, 0.15);
+      padding: 8px; border-radius: 6px; border: 1px solid #c62828; margin-top: 5px;
     }
 
     /* Cards Layout */
@@ -90,7 +111,7 @@
   <!-- PASSKEY & PAYMENT MODAL -->
   <div id="paywallModal">
     <div class="modal-card">
-      <h3 style="margin-bottom: 10px;">Cricket Controller Access</h3>
+      <h3 style="margin-bottom: 5px;">Cricket Controller Access</h3>
       <p style="font-size: 0.85rem; color: var(--text-muted);">Enter Passkey to unlock scoring controls</p>
       
       <input type="text" id="accessKeyInput" placeholder="Enter Access Key">
@@ -98,10 +119,31 @@
 
       <!-- PAYMENT / UPI SECTION -->
       <div class="payment-box">
-        <p style="font-size: 0.8rem; color: var(--text-muted);">Need a passkey? Scan QR with any UPI App</p>
-        <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=upi%3A%2F%2Fpay%3Fpa%3D920156929%40ibl%26pn%3DBank%2520Of%2520India%26cu%3DINR" alt="UPI QR Code">
+        <div class="price-tag">Access Fee: ₹99</div>
+        <p style="font-size: 0.8rem; color: var(--text-muted);">Scan QR or select your payment app below:</p>
+        
+        <!-- UPI QR Code -->
+        <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=upi%3A%2F%2Fpay%3Fpa%3D920156929%40ibl%26pn%3DBank%2520Of%2520India%26am%3D99%26cu%3DINR" alt="UPI QR Code">
+        
         <div class="upi-id">UPI ID: <span>920156929@ibl</span></div>
-        <p style="font-size: 0.75rem; color: #888;">Send payment screenshot to admin to get your key.</p>
+
+        <!-- Direct UPI App Buttons -->
+        <div class="app-buttons">
+          <a href="upi://pay?pa=920156929@ibl&pn=Bank%20Of%20India&am=99&cu=INR" class="pay-app-btn btn-phonepe">PhonePe</a>
+          <a href="upi://pay?pa=920156929@ibl&pn=Bank%20Of%20India&am=99&cu=INR" class="pay-app-btn btn-gpay">Google Pay</a>
+          <a href="upi://pay?pa=920156929@ibl&pn=Bank%20Of%20India&am=99&cu=INR" class="pay-app-btn btn-paytm">Paytm</a>
+          <a href="upi://pay?pa=920156929@ibl&pn=Bank%20Of%20India&am=99&cu=INR" class="pay-app-btn btn-bhim">BHIM</a>
+        </div>
+
+        <!-- WhatsApp Link Button -->
+        <a href="https://wa.me/91920156929?text=Hi%2C%20I%20paid%20%E2%82%B999%20for%20the%20Cricket%20Score%20Controller.%20Please%20send%20my%20passkey." target="_blank" class="btn-whatsapp">
+          💬 Send Screenshot on WhatsApp
+        </a>
+
+        <!-- Disclaimer -->
+        <div class="disclaimer">
+          ⚠️ <strong>Disclaimer:</strong> Generating passkey can take time, so please wait after sending your payment screenshot.
+        </div>
       </div>
     </div>
   </div>

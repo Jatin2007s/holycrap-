@@ -1,5 +1,183 @@
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cricket Score Controller</title>
+  <style>
+    :root {
+      --bg-dark: #121212;
+      --card-bg: #1e1e1e;
+      --accent-green: #2e7d32;
+      --accent-blue: #1565c0;
+      --accent-red: #c62828;
+      --text-main: #ffffff;
+      --text-muted: #b0bec5;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    body { background-color: var(--bg-dark); color: var(--text-main); padding: 15px; display: block; }
+    .container { max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; gap: 15px; }
+
+    /* Modal / Paywall */
+    #paywallModal {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0, 0, 0, 0.85); display: flex; align-items: center;
+      justify-content: center; z-index: 1000;
+    }
+    .modal-card {
+      background: var(--card-bg); padding: 25px; border-radius: 12px;
+      text-align: center; max-width: 350px; width: 90%; border: 1px solid #333;
+    }
+    .modal-card input {
+      width: 100%; padding: 10px; margin: 15px 0; border-radius: 6px;
+      border: 1px solid #444; background: #2a2a2a; color: #fff; text-align: center;
+    }
+
+    /* Cards Layout */
+    .card { background: var(--card-bg); padding: 15px; border-radius: 10px; border: 1px solid #2d2d2d; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+
+    /* Score Display */
+    .score-banner { text-align: center; background: #252525; padding: 15px; border-radius: 8px; }
+    .big-score { font-size: 2.5rem; font-weight: bold; color: #4caf50; }
+    .sub-score { font-size: 1rem; color: var(--text-muted); margin-top: 5px; }
+
+    /* Form Inputs & Buttons */
+    label { font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 4px; }
+    input, select {
+      width: 100%; padding: 8px 10px; border-radius: 6px; border: 1px solid #444;
+      background: #2a2a2a; color: #fff; font-size: 0.9rem;
+    }
+    button {
+      padding: 12px; border: none; border-radius: 6px; font-weight: bold;
+      color: #fff; cursor: pointer; transition: 0.2s opacity;
+    }
+    button:hover { opacity: 0.9; }
+    button:active { transform: scale(0.98); }
+
+    .btn-green { background: var(--accent-green); }
+    .btn-blue { background: var(--accent-blue); }
+    .btn-red { background: var(--accent-red); }
+    .btn-dark { background: #333; color: #fff; border: 1px solid #444; }
+    .btn-orange { background: #e65100; }
+
+    /* Custom Banners */
+    #target-banner { display: none; justify-content: space-between; background: #1a237e; padding: 10px; border-radius: 6px; }
+    #status-banner { display: none; text-align: center; font-weight: bold; background: #f57f17; color: #000; padding: 8px; border-radius: 6px; }
+  </style>
+</head>
+<body>
+
+  <!-- PASSKEY MODAL -->
+  <div id="paywallModal">
+    <div class="modal-card">
+      <h3>Enter Passkey</h3>
+      <input type="text" id="accessKeyInput" placeholder="Enter Access Key">
+      <button class="btn-green" style="width:100%;" onclick="verifyLicenseKey()">UNLOCK CONTROLLER</button>
+    </div>
+  </div>
+
+  <!-- MAIN CONTROLLER APP -->
+  <div class="container" id="appContainer">
+
+    <div id="status-banner"></div>
+
+    <!-- LIVE SCORE OVERVIEW -->
+    <div class="card score-banner">
+      <div>
+        <span id="out-team-a">TEAM A</span> vs <span id="out-team-b">TEAM B</span>
+      </div>
+      <div class="big-score">
+        <span id="runs">0</span> / <span id="wickets">0</span>
+        <span style="font-size:1.2rem; color:#aaa;">(<span id="overs">0.0</span> / <span id="out-max-overs">20</span> ov)</span>
+      </div>
+      <div class="sub-score" id="out-striker">Striker* 0 (0)</div>
+      <div class="sub-score" id="out-non-striker">Non-Striker 0 (0)</div>
+      <div class="sub-score" id="out-bowler">Bowler 0-0 (0.0)</div>
+      <div class="sub-score" id="out-this-over">THIS OVER: [ - ]</div>
+    </div>
+
+    <!-- TARGET BANNER (2nd Innings) -->
+    <div id="target-banner">
+      <span>TARGET: <strong id="out-target">0</strong></span>
+      <span id="out-need">NEED 0 OFF 0 BALLS</span>
+      <span>RRR: <strong id="out-rrr">0.00</strong></span>
+    </div>
+
+    <!-- MATCH SETUP -->
+    <div class="card grid-2">
+      <div>
+        <label>Team A (Batting)</label>
+        <input type="text" id="in-team-a" value="TEAM A" onchange="sync()">
+      </div>
+      <div>
+        <label>Team B (Bowling)</label>
+        <input type="text" id="in-team-b" value="TEAM B" onchange="sync()">
+      </div>
+      <div>
+        <label>Innings</label>
+        <select id="in-innings" onchange="sync()">
+          <option value="1">1st Innings</option>
+          <option value="2">2nd Innings</option>
+        </select>
+      </div>
+      <div>
+        <label>Max Overs</label>
+        <input type="number" id="in-max-overs" value="20" onchange="sync()">
+      </div>
+      <div>
+        <label>Target Runs (Innings 2)</label>
+        <input type="number" id="in-target" value="0" onchange="sync()">
+      </div>
+    </div>
+
+    <!-- PLAYERS INNINGS SETUP -->
+    <div class="card grid-3">
+      <div>
+        <label>Striker Name</label>
+        <input type="text" id="in-striker" value="Striker" onchange="sync()">
+      </div>
+      <div>
+        <label>Non-Striker Name</label>
+        <input type="text" id="in-non-striker" value="Non-Striker" onchange="sync()">
+      </div>
+      <div>
+        <label>Current Bowler</label>
+        <input type="text" id="in-bowler" value="Bowler" onchange="onBowlerChange()">
+      </div>
+    </div>
+
+    <!-- RUN BUTTONS -->
+    <div class="card grid-4">
+      <button class="btn-dark" onclick="addBall(0, '0')">0 RUN</button>
+      <button class="btn-dark" onclick="addBall(1, '1')">+1 RUN</button>
+      <button class="btn-dark" onclick="addBall(2, '2')">+2 RUNS</button>
+      <button class="btn-dark" onclick="addBall(3, '3')">+3 RUNS</button>
+      <button class="btn-blue" onclick="addBall(4, '4', 'FOUR')">FOUR (4)</button>
+      <button class="btn-green" onclick="addBall(6, '6', 'SIX')">SIX (6)</button>
+      <button class="btn-red" onclick="addWicket()">WICKET</button>
+      <button class="btn-orange" onclick="swapStrike()">SWAP STRIKE</button>
+    </div>
+
+    <!-- EXTRAS & ADJUSTMENTS -->
+    <div class="card grid-3">
+      <button class="btn-dark" onclick="addExtra('wd', 'WD')">+1 WIDE</button>
+      <button class="btn-dark" onclick="addExtra('nb', 'NB')">+1 NO BALL</button>
+      <button class="btn-dark" onclick="addExtra('b', '1B')">+1 BYE</button>
+      <button class="btn-dark" onclick="manualAdjust('runs', 1)">+1 Run (Manual)</button>
+      <button class="btn-dark" onclick="manualAdjust('runs', -1)">-1 Run (Manual)</button>
+      <button class="btn-dark" onclick="manualAdjust('balls', -1)">-1 Ball (Manual)</button>
+    </div>
+
+  </div>
+
+  <!-- FIREBASE SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
   <script>
     // --- FIREBASE CONFIGURATION ---
     const firebaseConfig = {
@@ -17,21 +195,24 @@
     let currentOverBalls = [];
     let matchStatusText = "";
 
-    // --- AUTOMATIC CLEANUP OF OLD BAD DATA ---
     function checkSavedLicense() {
       const savedKey = localStorage.getItem('cricket_passkey');
       const savedMatchId = localStorage.getItem('cricket_match_id');
 
-      // Clear broken cache
       if (!savedMatchId || savedMatchId === "undefined" || savedMatchId === "null") {
         localStorage.removeItem('cricket_passkey');
         localStorage.removeItem('cricket_match_id');
+        unlockApp(); // Default unhide
+        initMatchDatabase('match_1');
         return;
       }
 
       if (savedKey && savedMatchId) {
         initMatchDatabase(savedMatchId);
         unlockApp();
+      } else {
+        unlockApp();
+        initMatchDatabase('match_1');
       }
     }
 
@@ -44,7 +225,7 @@
 
       firebase.database().ref('passkeys/' + enteredKey).once('value')
         .then((snapshot) => {
-          let targetMatchId = 'match_1'; // Safe default
+          let targetMatchId = 'match_1';
 
           if (snapshot.exists()) {
             const data = snapshot.val();
@@ -54,7 +235,6 @@
               targetMatchId = data.matchId;
             }
           } else {
-            // If the key isn't in Firebase, default to match_1 instead of undefined
             alert("Passkey not mapped in database. Defaulting to match_1");
           }
 
@@ -66,19 +246,20 @@
         })
         .catch((err) => {
           console.error(err);
-          // Hard fallback so it NEVER creates undefined
           initMatchDatabase('match_1');
           unlockApp();
         });
     }
 
     function unlockApp() {
-      document.getElementById('paywallModal').style.display = 'none';
-      document.getElementById('appContainer').classList.add('app-unlocked');
+      const modal = document.getElementById('paywallModal');
+      if (modal) modal.style.display = 'none';
+
+      const app = document.getElementById('appContainer');
+      if (app) app.style.display = 'flex';
     }
 
     function initMatchDatabase(matchId) {
-      // Force match_1 if anything invalid is passed
       if (!matchId || matchId === "undefined" || matchId === "null" || matchId.trim() === "") {
         matchId = 'match_1';
       }
@@ -177,7 +358,6 @@
     }
 
     function sync(animType = "") {
-      // Strict fallback check inside sync
       let matchKey = activeMatchId;
       if (!matchKey || matchKey === "undefined" || matchKey === "null") {
         matchKey = 'match_1';
@@ -294,3 +474,5 @@
       sync();
     }
   </script>
+</body>
+</html>

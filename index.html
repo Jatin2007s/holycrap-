@@ -3,55 +3,74 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cricket Score Controller</title>
+  <title>Pulse Streaming - Cricket Controller</title>
   <style>
     :root {
-      --bg-dark: #121212;
-      --card-bg: #1e1e1e;
+      --bg-dark: #0a0e17;
+      --card-bg: #121927;
+      --input-bg: #1a2332;
+      --border-color: rgba(255, 255, 255, 0.12);
       --accent-green: #2e7d32;
       --accent-blue: #1565c0;
       --accent-red: #c62828;
+      --accent-cyan: #00e5ff;
       --text-main: #ffffff;
-      --text-muted: #b0bec5;
+      --text-muted: #94a3b8;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-    body { background-color: var(--bg-dark); color: var(--text-main); padding: 15px; }
+    body { background-color: var(--bg-dark); color: var(--text-main); padding: 15px; min-height: 100vh; }
     .container { max-width: 800px; margin: 0 auto; display: none; flex-direction: column; gap: 15px; }
 
     /* Modal / Paywall */
     #paywallModal {
       position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(0, 0, 0, 0.9); display: flex; align-items: center;
+      background: rgba(10, 14, 23, 0.95); display: flex; align-items: center;
       justify-content: center; z-index: 1000; overflow-y: auto; padding: 20px 0;
     }
     .modal-card {
-      background: var(--card-bg); padding: 25px; border-radius: 12px;
-      text-align: center; max-width: 380px; width: 90%; border: 1px solid #333;
-      box-shadow: 0px 8px 24px rgba(0, 0, 0, 0.5); margin: auto;
+      background: var(--card-bg); padding: 28px 24px; border-radius: 12px;
+      text-align: center; max-width: 420px; width: 90%; border: 1px solid var(--border-color);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7); margin: auto;
+      position: relative; overflow: hidden;
     }
     .modal-card input {
-      width: 100%; padding: 10px; margin: 12px 0; border-radius: 6px;
-      border: 1px solid #444; background: #2a2a2a; color: #fff; text-align: center;
-      font-size: 1rem;
+      width: 100%; padding: 12px 16px; margin: 12px 0; border-radius: 6px;
+      border: 1px solid var(--border-color); background: var(--input-bg); color: #fff; text-align: center;
+      font-size: 1rem; outline: none; transition: border-color 0.3s;
     }
+    .modal-card input:focus {
+      border-color: var(--accent-cyan);
+    }
+
+    /* EMBEDDED WATERMARK LOGO */
+    .card-bg-logo {
+      position: absolute; right: -30px; bottom: -20px; height: 130%; width: auto;
+      opacity: 0.10; pointer-events: none; z-index: 0;
+      filter: drop-shadow(0 0 15px rgba(0, 229, 255, 0.3));
+    }
+    .card-content {
+      position: relative; z-index: 1;
+    }
+
+    /* HEADER BRANDING */
+    .brand-header { text-align: center; margin-bottom: 20px; }
+    .brand-header svg { height: 50px; width: auto; filter: drop-shadow(0 2px 8px rgba(0,0,0,0.6)); }
 
     /* Payment Box & App Buttons */
     .payment-box {
-      margin-top: 15px; padding-top: 15px; border-top: 1px solid #333;
+      margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--border-color);
       display: flex; flex-direction: column; align-items: center; gap: 12px;
     }
     .payment-box img {
-      width: 160px; height: 160px; border-radius: 8px; border: 2px solid #444;
+      width: 160px; height: 160px; border-radius: 8px; border: 2px solid var(--border-color);
       background: #fff; padding: 5px;
     }
     .upi-id {
       font-size: 0.85rem; color: #4caf50; font-weight: bold; background: #1a2e1a;
       padding: 6px 12px; border-radius: 20px; border: 1px solid #2e7d32;
     }
-    .price-tag {
-      font-size: 1.1rem; font-weight: bold; color: #ffca28;
-    }
+    .price-tag { font-size: 1.1rem; font-weight: bold; color: #ffca28; }
 
     .app-buttons {
       display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%; margin-top: 5px;
@@ -72,37 +91,39 @@
     }
 
     /* Cards Layout */
-    .card { background: var(--card-bg); padding: 15px; border-radius: 10px; border: 1px solid #2d2d2d; }
+    .card { background: var(--card-bg); padding: 15px; border-radius: 10px; border: 1px solid var(--border-color); }
     .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
     .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
     .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
 
     /* Score Display */
-    .score-banner { text-align: center; background: #252525; padding: 15px; border-radius: 8px; }
+    .score-banner { text-align: center; background: #182232; padding: 15px; border-radius: 8px; border: 1px solid rgba(0, 229, 255, 0.2); }
     .big-score { font-size: 2.5rem; font-weight: bold; color: #4caf50; }
     .sub-score { font-size: 1rem; color: var(--text-muted); margin-top: 5px; }
 
     /* Form Inputs & Buttons */
     label { font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 4px; }
     input, select {
-      width: 100%; padding: 8px 10px; border-radius: 6px; border: 1px solid #444;
-      background: #2a2a2a; color: #fff; font-size: 0.9rem;
+      width: 100%; padding: 8px 10px; border-radius: 6px; border: 1px solid var(--border-color);
+      background: var(--input-bg); color: #fff; font-size: 0.9rem; outline: none;
     }
+    input:focus, select:focus { border-color: var(--accent-cyan); }
+    
     button {
       padding: 12px; border: none; border-radius: 6px; font-weight: bold;
-      color: #fff; cursor: pointer; transition: 0.2s opacity;
+      color: #fff; cursor: pointer; transition: 0.2s opacity, 0.2s transform;
     }
     button:hover { opacity: 0.9; }
     button:active { transform: scale(0.98); }
 
-    .btn-green { background: var(--accent-green); }
-    .btn-blue { background: var(--accent-blue); }
-    .btn-red { background: var(--accent-red); }
-    .btn-dark { background: #333; color: #fff; border: 1px solid #444; }
+    .btn-green { background: linear-gradient(135deg, #2e7d32, #1b5e20); }
+    .btn-blue { background: linear-gradient(135deg, #1565c0, #0d47a1); }
+    .btn-red { background: linear-gradient(135deg, #ff1744, #d50000); }
+    .btn-dark { background: #1a2332; color: #fff; border: 1px solid var(--border-color); }
     .btn-orange { background: #e65100; }
 
     /* Custom Banners */
-    #target-banner { display: none; justify-content: space-between; background: #1a237e; padding: 10px; border-radius: 6px; }
+    #target-banner { display: none; justify-style: space-between; background: #1a237e; padding: 10px; border-radius: 6px; }
     #status-banner { display: none; text-align: center; font-weight: bold; background: #f57f17; color: #000; padding: 8px; border-radius: 6px; }
   </style>
 </head>
@@ -111,45 +132,101 @@
   <!-- PASSKEY & PAYMENT MODAL -->
   <div id="paywallModal">
     <div class="modal-card">
-      <h3 style="margin-bottom: 5px;">Cricket Controller Access</h3>
-      <p style="font-size: 0.85rem; color: var(--text-muted);">Enter Passkey to unlock scoring controls</p>
       
-      <input type="text" id="accessKeyInput" placeholder="Enter Access Key">
-      <button class="btn-green" style="width:100%;" onclick="verifyLicenseKey()">UNLOCK CONTROLLER</button>
+      <!-- BACKGROUND LOGO WATERMARK -->
+      <svg class="card-bg-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 120">
+        <defs>
+          <linearGradient id="bgGlow" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#FF1744" />
+            <stop offset="100%" stop-color="#D50000" />
+          </linearGradient>
+        </defs>
+        <g transform="translate(15, 10)">
+          <circle cx="50" cy="50" r="38" fill="url(#bgGlow)" />
+          <path d="M 28 28 C 38 40 38 60 28 72 M 72 28 C 62 40 62 60 72 72" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" fill="none" />
+          <path d="M 0 50 H 22 L 32 30 L 44 72 L 56 32 L 66 58 L 76 50 H 100" stroke="#00E5FF" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+        </g>
+        <text x="125" y="62" font-family="sans-serif" font-weight="900" font-size="34" fill="#FFFFFF">PULSE</text>
+        <text x="126" y="88" font-family="sans-serif" font-weight="700" font-size="16" fill="#00E5FF" letter-spacing="5">STREAMING</text>
+      </svg>
 
-      <!-- PAYMENT / UPI SECTION -->
-      <div class="payment-box">
-        <div class="price-tag">Access Fee: ₹99</div>
-        <p style="font-size: 0.8rem; color: var(--text-muted);">Scan QR or select your payment app below:</p>
-        
-        <!-- UPI QR Code -->
-        <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=upi%3A%2F%2Fpay%3Fpa%3D920156929%40ibl%26pn%3DBank%2520Of%2520India%26am%3D99%26cu%3DINR" alt="UPI QR Code">
-        
-        <div class="upi-id">UPI ID: <span>920156929@ibl</span></div>
-
-        <!-- Direct UPI App Buttons -->
-        <div class="app-buttons">
-          <a href="upi://pay?pa=920156929@ibl&pn=Bank%20Of%20India&am=99&cu=INR" class="pay-app-btn btn-phonepe">PhonePe</a>
-          <a href="upi://pay?pa=920156929@ibl&pn=Bank%20Of%20India&am=99&cu=INR" class="pay-app-btn btn-gpay">Google Pay</a>
-          <a href="upi://pay?pa=920156929@ibl&pn=Bank%20Of%20India&am=99&cu=INR" class="pay-app-btn btn-paytm">Paytm</a>
-          <a href="upi://pay?pa=920156929@ibl&pn=Bank%20Of%20India&am=99&cu=INR" class="pay-app-btn btn-bhim">BHIM</a>
+      <div class="card-content">
+        <!-- HEADER PULSE STREAMING LOGO -->
+        <div class="brand-header">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 120">
+            <defs>
+              <linearGradient id="headerGlow" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#FF1744" />
+                <stop offset="100%" stop-color="#D50000" />
+              </linearGradient>
+            </defs>
+            <g transform="translate(15, 10)">
+              <circle cx="50" cy="50" r="38" fill="url(#headerGlow)" />
+              <path d="M 28 28 C 38 40 38 60 28 72 M 72 28 C 62 40 62 60 72 72" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" fill="none" />
+              <path d="M 0 50 H 22 L 32 30 L 44 72 L 56 32 L 66 58 L 76 50 H 100" stroke="#00E5FF" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+            </g>
+            <text x="125" y="62" font-family="sans-serif" font-weight="900" font-size="34" fill="#FFFFFF">PULSE</text>
+            <text x="126" y="88" font-family="sans-serif" font-weight="700" font-size="16" fill="#00E5FF" letter-spacing="5">STREAMING</text>
+          </svg>
+          <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 5px;">Enter Access Key to unlock scoring controls</p>
         </div>
+        
+        <input type="text" id="accessKeyInput" placeholder="Enter Access Key">
+        <button class="btn-red" style="width:100%;" onclick="verifyLicenseKey()">UNLOCK CONTROLLER</button>
 
-        <!-- WhatsApp Link Button -->
-        <a href="https://wa.me/91920156929?text=Hi%2C%20I%20paid%20%E2%82%B999%20for%20the%20Cricket%20Score%20Controller.%20Please%20send%20my%20passkey." target="_blank" class="btn-whatsapp">
-          💬 Send Screenshot on WhatsApp
-        </a>
+        <!-- PAYMENT / UPI SECTION -->
+        <div class="payment-box">
+          <div class="price-tag">Access Fee: ₹99</div>
+          <p style="font-size: 0.8rem; color: var(--text-muted);">Scan QR or select your payment app below:</p>
+          
+          <!-- UPI QR Code -->
+          <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=upi%3A%2F%2Fpay%3Fpa%3D920156929%40ibl%26pn%3DBank%2520Of%2520India%26am%3D99%26cu%3DINR" alt="UPI QR Code">
+          
+          <div class="upi-id">UPI ID: <span>920156929@ibl</span></div>
 
-        <!-- Disclaimer -->
-        <div class="disclaimer">
-          ⚠️ <strong>Disclaimer:</strong> Generating passkey can take time, so please wait after sending your payment screenshot.
+          <!-- Direct UPI App Buttons -->
+          <div class="app-buttons">
+            <a href="upi://pay?pa=920156929@ibl&pn=Bank%20Of%20India&am=99&cu=INR" class="pay-app-btn btn-phonepe">PhonePe</a>
+            <a href="upi://pay?pa=920156929@ibl&pn=Bank%20Of%20India&am=99&cu=INR" class="pay-app-btn btn-gpay">Google Pay</a>
+            <a href="upi://pay?pa=920156929@ibl&pn=Bank%20Of%20India&am=99&cu=INR" class="pay-app-btn btn-paytm">Paytm</a>
+            <a href="upi://pay?pa=920156929@ibl&pn=Bank%20Of%20India&am=99&cu=INR" class="pay-app-btn btn-bhim">BHIM</a>
+          </div>
+
+          <!-- WhatsApp Link Button -->
+          <a href="https://wa.me/91920156929?text=Hi%2C%20I%20paid%20%E2%82%B999%20for%20the%20Cricket%20Score%20Controller.%20Please%20send%20my%20passkey." target="_blank" class="btn-whatsapp">
+            💬 Send Screenshot on WhatsApp
+          </a>
+
+          <!-- Disclaimer -->
+          <div class="disclaimer">
+            ⚠️ <strong>Disclaimer:</strong> Generating passkey can take time, so please wait after sending your payment screenshot.
+          </div>
         </div>
       </div>
+
     </div>
   </div>
 
   <!-- MAIN CONTROLLER APP -->
   <div class="container" id="appContainer">
+
+    <div class="brand-header">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 120">
+        <defs>
+          <linearGradient id="headerGlow2" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#FF1744" />
+            <stop offset="100%" stop-color="#D50000" />
+          </linearGradient>
+        </defs>
+        <g transform="translate(15, 10)">
+          <circle cx="50" cy="50" r="38" fill="url(#headerGlow2)" />
+          <path d="M 28 28 C 38 40 38 60 28 72 M 72 28 C 62 40 62 60 72 72" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" fill="none" />
+          <path d="M 0 50 H 22 L 32 30 L 44 72 L 56 32 L 66 58 L 76 50 H 100" stroke="#00E5FF" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+        </g>
+        <text x="125" y="62" font-family="sans-serif" font-weight="900" font-size="34" fill="#FFFFFF">PULSE</text>
+        <text x="126" y="88" font-family="sans-serif" font-weight="700" font-size="16" fill="#00E5FF" letter-spacing="5">STREAMING</text>
+      </svg>
+    </div>
 
     <div id="status-banner"></div>
 

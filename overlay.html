@@ -32,6 +32,26 @@
       box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
       border: 1px solid rgba(255, 255, 255, 0.08);
       position: relative;
+      overflow: hidden; /* Keeps the background logo inside card boundaries */
+    }
+
+    /* EMBEDDED BACKGROUND LOGO WATERMARK */
+    .card-bg-logo {
+      position: absolute;
+      right: -10px;
+      bottom: -15px;
+      height: 140%;
+      width: auto;
+      opacity: 0.12; /* Low opacity so text stays perfectly readable */
+      pointer-events: none;
+      z-index: 0;
+      filter: drop-shadow(0 0 12px rgba(0, 229, 255, 0.4));
+    }
+
+    /* POSITIONS CONTENT ABOVE BACKGROUND LOGO */
+    .top-bar, .bottom-bar {
+      position: relative;
+      z-index: 1;
     }
 
     .top-bar {
@@ -122,32 +142,29 @@
       0% { transform: scale(0.7); opacity: 0; }
       100% { transform: scale(1); opacity: 1; }
     }
-
-    /* PULSE STREAMING WATERMARK STYLES */
-    .watermark-container {
-      position: fixed;
-      top: 20px;
-      right: 25px;
-      z-index: 9999;
-      pointer-events: none;
-    }
-
-    .brand-watermark {
-      height: 48px;
-      width: auto;
-      filter: drop-shadow(0px 2px 8px rgba(0, 0, 0, 0.8));
-      opacity: 0.9;
-    }
   </style>
 </head>
 <body>
 
-  <!-- PULSE STREAMING WATERMARK -->
-  <div class="watermark-container">
-    <img src="logo.svg" alt="Pulse Streaming" class="brand-watermark">
-  </div>
-
   <div class="overlay-card">
+    
+    <!-- BACKGROUND LOGO SVG EMBEDDED DIRECTLY IN PANEL -->
+    <svg class="card-bg-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 120">
+      <defs>
+        <linearGradient id="bgGlow" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stop-color="#FF1744" />
+          <stop offset="100%" stop-color="#D50000" />
+        </linearGradient>
+      </defs>
+      <g transform="translate(15, 10)">
+        <circle cx="50" cy="50" r="38" fill="url(#bgGlow)" />
+        <path d="M 28 28 C 38 40 38 60 28 72 M 72 28 C 62 40 62 60 72 72" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" fill="none" />
+        <path d="M 0 50 H 22 L 32 30 L 44 72 L 56 32 L 66 58 L 76 50 H 100" stroke="#00E5FF" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+      </g>
+      <text x="125" y="62" font-family="sans-serif" font-weight="900" font-size="34" fill="#FFFFFF">PULSE</text>
+      <text x="126" y="88" font-family="sans-serif" font-weight="700" font-size="16" fill="#00E5FF" letter-spacing="5">STREAMING</text>
+    </svg>
+
     <div class="top-bar">
       <div class="teams" id="teams">TEAM A vs TEAM B</div>
       

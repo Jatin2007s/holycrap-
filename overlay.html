@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cricket Scorecard Overlay</title>
+  <title>Cricket Scorecard Overlay - Pulse Streaming</title>
 
   <!-- Firebase Compatibility SDKs -->
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
@@ -122,9 +122,30 @@
       0% { transform: scale(0.7); opacity: 0; }
       100% { transform: scale(1); opacity: 1; }
     }
+
+    /* PULSE STREAMING WATERMARK STYLES */
+    .watermark-container {
+      position: fixed;
+      top: 20px;
+      right: 25px;
+      z-index: 9999;
+      pointer-events: none;
+    }
+
+    .brand-watermark {
+      height: 48px;
+      width: auto;
+      filter: drop-shadow(0px 2px 8px rgba(0, 0, 0, 0.8));
+      opacity: 0.9;
+    }
   </style>
 </head>
 <body>
+
+  <!-- PULSE STREAMING WATERMARK -->
+  <div class="watermark-container">
+    <img src="logo.svg" alt="Pulse Streaming" class="brand-watermark">
+  </div>
 
   <div class="overlay-card">
     <div class="top-bar">

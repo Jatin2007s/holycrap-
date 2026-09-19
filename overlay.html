@@ -20,8 +20,66 @@
     body {
       background: transparent;
       padding: 10px;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      position: relative;
     }
 
+    /* FULL-SCREEN EVENT POPUP OVERLAY */
+    #popOverlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      background: rgba(0, 0, 0, 0.45);
+      backdrop-filter: blur(4px);
+    }
+
+    .pop-card {
+      padding: 30px 80px;
+      border-radius: 20px;
+      font-size: 7rem;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 6px;
+      box-shadow: 0 0 60px rgba(0, 0, 0, 0.9);
+      animation: popZoom 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    }
+
+    @keyframes popZoom {
+      0% { transform: scale(0.2); opacity: 0; }
+      60% { transform: scale(1.15); opacity: 1; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    .pop-six {
+      background: #0a0e17;
+      color: #00e5ff;
+      border: 8px solid #00e5ff;
+      text-shadow: 0 0 35px #00e5ff;
+    }
+
+    .pop-four {
+      background: #0a0e17;
+      color: #facc15;
+      border: 8px solid #facc15;
+      text-shadow: 0 0 35px #facc15;
+    }
+
+    .pop-wicket {
+      background: #0a0e17;
+      color: #ff1744;
+      border: 8px solid #ff1744;
+      text-shadow: 0 0 35px #ff1744;
+    }
+
+    /* MAIN OVERLAY CARD */
     .overlay-card {
       width: 100%;
       max-width: 850px;
@@ -32,7 +90,7 @@
       box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
       border: 1px solid rgba(255, 255, 255, 0.08);
       position: relative;
-      overflow: hidden; /* Keeps the background logo inside card boundaries */
+      overflow: hidden;
     }
 
     /* EMBEDDED BACKGROUND LOGO WATERMARK */
@@ -42,13 +100,12 @@
       bottom: -15px;
       height: 140%;
       width: auto;
-      opacity: 0.12; /* Low opacity so text stays perfectly readable */
+      opacity: 0.12;
       pointer-events: none;
       z-index: 0;
       filter: drop-shadow(0 0 12px rgba(0, 229, 255, 0.4));
     }
 
-    /* POSITIONS CONTENT ABOVE BACKGROUND LOGO */
     .top-bar, .bottom-bar {
       position: relative;
       z-index: 1;
@@ -126,7 +183,7 @@
       margin-top: 2px;
     }
 
-    /* Animation badge for boundaries/wickets */
+    /* Small badge for inline event indication */
     .event-anim {
       display: inline-block;
       padding: 2px 8px;
@@ -146,8 +203,13 @@
 </head>
 <body>
 
+  <!-- FULL SCREEN EVENT POPUP -->
+  <div id="popOverlay">
+    <div id="popBox" class="pop-card pop-six">SIX!</div>
+  </div>
+
+  <!-- SCORECARD OVERLAY CARD -->
   <div class="overlay-card">
-    
     <!-- BACKGROUND LOGO SVG EMBEDDED DIRECTLY IN PANEL -->
     <svg class="card-bg-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 120">
       <defs>
@@ -191,13 +253,7 @@
   <script>
     // 1. Firebase Configuration
     const firebaseConfig = {
-      apiKey: "YOUR_API_KEY",
-      authDomain: "betterone48-207a0.firebaseapp.com",
-      databaseURL: "https://betterone48-207a0-default-rtdb.asia-southeast1.firebasedatabase.app",
-      projectId: "betterone48-207a0",
-      storageBucket: "betterone48-207a0.appspot.com",
-      messagingSenderId: "YOUR_SENDER_ID",
-      appId: "YOUR_APP_ID"
+      databaseURL: "https://betterone48-207a0-default-rtdb.asia-southeast1.firebasedatabase.app"
     };
 
     if (!firebase.apps.length) {
@@ -208,7 +264,35 @@
     const urlParams = new URLSearchParams(window.location.search);
     const matchId = urlParams.get('match') || 'match_1';
 
-    // 3. Sync with Firebase node
+    let lastProcessedAnimId = 0;
+
+    // 3. Trigger Full-Screen Event Popups
+    function triggerFullScreenEvent(eventType) {
+      const overlay = document.getElementById('popOverlay');
+      const box = document.getElementById('popBox');
+
+      if (!overlay || !box) return;
+
+      if (eventType === 'SIX') {
+        box.innerText = '💥 SIX! 💥';
+        box.className = 'pop-card pop-six';
+      } else if (eventType === 'FOUR') {
+        box.innerText = '⚡ FOUR! ⚡';
+        box.className = 'pop-card pop-four';
+      } else if (eventType === 'WICKET') {
+        box.innerText = '☝️ WICKET! ☝️';
+        box.className = 'pop-card pop-wicket';
+      } else {
+        return;
+      }
+
+      overlay.style.display = 'flex';
+      setTimeout(() => {
+        overlay.style.display = 'none';
+      }, 2500);
+    }
+
+    // 4. Sync with Firebase node
     firebase.database().ref('matches/' + matchId).on('value', (snapshot) => {
       const data = snapshot.val();
       if (!data) return;
@@ -245,13 +329,13 @@
       document.getElementById('nonStriker').innerText = `${nsName} ${nsRuns} (${nsBalls})`;
 
       // Bowler
-      const bName = data.bowlerName || 'Bowler';
+      const bName = data.bowler || data.bowlerName || 'Bowler';
       const bWickets = data.bowlerWickets !== undefined ? data.bowlerWickets : 0;
       const bRuns = data.bowlerRuns !== undefined ? data.bowlerRuns : 0;
       const bOvers = data.bowlerOvers !== undefined ? data.bowlerOvers : '0.0';
       document.getElementById('bowler').innerText = `${bName} ${bWickets}-${bRuns} (${bOvers})`;
 
-      // This Over & Animation Badge
+      // This Over & Inline Badge
       document.getElementById('thisOver').innerText = data.thisOver || '-';
       
       const badge = document.getElementById('animBadge');
@@ -259,6 +343,12 @@
         badge.innerHTML = `<span class="event-anim">${data.lastEvent}</span>`;
       } else {
         badge.innerHTML = '';
+      }
+
+      // Process Pop-up Animations (Full-Screen)
+      if (data.lastEvent && data.animId && data.animId !== lastProcessedAnimId) {
+        lastProcessedAnimId = data.animId;
+        triggerFullScreenEvent(data.lastEvent);
       }
     });
   </script>

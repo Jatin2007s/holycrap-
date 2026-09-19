@@ -1,640 +1,758 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pulse Streaming - Cricket Controller</title>
-  <style>
-    :root {
-      --bg-dark: #0a0e17;
-      --card-bg: #121927;
-      --input-bg: #1a2332;
-      --border-color: rgba(255, 255, 255, 0.12);
-      --accent-green: #2e7d32;
-      --accent-blue: #1565c0;
-      --accent-red: #c62828;
-      --accent-cyan: #00e5ff;
-      --text-main: #ffffff;
-      --text-muted: #94a3b8;
-    }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pulse Streaming - Cricket Controller</title>
+<style>
+:root {
+  --bg-dark: #0a0e17;
+  --card-bg: #121927;
+  --input-bg: #1a2332;
+  --border-color: rgba(255, 255, 255, 0.12);
+  --accent-green: #2e7d32;
+  --accent-blue: #1565c0;
+  --accent-red: #c62828;
+  --accent-cyan: #00e5ff;
+  --accent-gold: #ffd700;
+  --accent-purple: #7b1fa2;
+  --text-main: #ffffff;
+  --text-muted: #94a3b8;
+}
 
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-    body { background-color: var(--bg-dark); color: var(--text-main); padding: 15px; min-height: 100vh; }
-    .container { max-width: 800px; margin: 0 auto; display: none; flex-direction: column; gap: 15px; }
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+body { background-color: var(--bg-dark); color: var(--text-main); padding: 15px; min-height: 100vh; }
+.container { max-width: 800px; margin: 0 auto; display: none; flex-direction: column; gap: 15px; }
 
-    /* Modal / Paywall */
-    #paywallModal {
-      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(10, 14, 23, 0.95); display: flex; align-items: center;
-      justify-content: center; z-index: 1000; overflow-y: auto; padding: 20px 0;
-    }
-    .modal-card {
-      background: var(--card-bg); padding: 28px 24px; border-radius: 12px;
-      text-align: center; max-width: 420px; width: 90%; border: 1px solid var(--border-color);
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7); margin: auto;
-      position: relative; overflow: hidden;
-    }
-    .modal-card input {
-      width: 100%; padding: 12px 16px; margin: 12px 0; border-radius: 6px;
-      border: 1px solid var(--border-color); background: var(--input-bg); color: #fff; text-align: center;
-      font-size: 1rem; outline: none; transition: border-color 0.3s;
-    }
-    .modal-card input:focus {
-      border-color: var(--accent-cyan);
-    }
+/* Modal / Paywall */
+#paywallModal {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(10, 14, 23, 0.95); display: flex; align-items: center;
+  justify-content: center; z-index: 1000; overflow-y: auto; padding: 20px 0;
+}
+.modal-card {
+  background: var(--card-bg); padding: 28px 24px; border-radius: 12px;
+  text-align: center; max-width: 420px; width: 90%; border: 1px solid var(--border-color);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7); margin: auto;
+  position: relative; overflow: hidden;
+}
+.modal-card input {
+  width: 100%; padding: 12px 16px; margin: 12px 0; border-radius: 6px;
+  border: 1px solid var(--border-color); background: var(--input-bg); color: #fff; text-align: center;
+  font-size: 1rem; outline: none; transition: border-color 0.3s;
+}
+.modal-card input:focus { border-color: var(--accent-cyan); }
 
-    /* EMBEDDED WATERMARK LOGO */
-    .card-bg-logo {
-      position: absolute; right: -30px; bottom: -20px; height: 130%; width: auto;
-      opacity: 0.10; pointer-events: none; z-index: 0;
-      filter: drop-shadow(0 0 15px rgba(0, 229, 255, 0.3));
-    }
-    .card-content {
-      position: relative; z-index: 1;
-    }
+/* EMBEDDED WATERMARK LOGO */
+.card-bg-logo {
+  position: absolute; right: -30px; bottom: -20px; height: 130%; width: auto;
+  opacity: 0.10; pointer-events: none; z-index: 0;
+  filter: drop-shadow(0 0 15px rgba(0, 229, 255, 0.3));
+}
+.card-content { position: relative; z-index: 1; }
 
-    /* HEADER BRANDING */
-    .brand-header { text-align: center; margin-bottom: 20px; }
-    .brand-header svg { height: 50px; width: auto; filter: drop-shadow(0 2px 8px rgba(0,0,0,0.6)); }
+/* HEADER BRANDING */
+.brand-header { text-align: center; margin-bottom: 20px; }
+.brand-header svg { height: 50px; width: auto; filter: drop-shadow(0 2px 8px rgba(0,0,0,0.6)); }
 
-    /* Payment Box & App Buttons */
-    .payment-box {
-      margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--border-color);
-      display: flex; flex-direction: column; align-items: center; gap: 12px;
-    }
-    .payment-box img {
-      width: 160px; height: 160px; border-radius: 8px; border: 2px solid var(--border-color);
-      background: #fff; padding: 5px;
-    }
-    .upi-id {
-      font-size: 0.85rem; color: #4caf50; font-weight: bold; background: #1a2e1a;
-      padding: 6px 12px; border-radius: 20px; border: 1px solid #2e7d32;
-    }
-    .price-tag { font-size: 1.1rem; font-weight: bold; color: #ffca28; }
+/* Payment Box & App Buttons */
+.payment-box {
+  margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--border-color);
+  display: flex; flex-direction: column; align-items: center; gap: 12px;
+}
+.payment-box img {
+  width: 160px; height: 160px; border-radius: 8px; border: 2px solid var(--border-color);
+  background: #fff; padding: 5px;
+}
+.upi-id {
+  font-size: 0.85rem; color: #4caf50; font-weight: bold; background: #1a2e1a;
+  padding: 6px 12px; border-radius: 20px; border: 1px solid #2e7d32;
+}
+.price-tag { font-size: 1.1rem; font-weight: bold; color: #ffca28; }
 
-    .app-buttons {
-      display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%; margin-top: 5px;
-    }
-    .pay-app-btn {
-      padding: 10px; font-size: 0.85rem; border-radius: 6px; font-weight: bold;
-      text-decoration: none; text-align: center; color: #fff; display: block;
-    }
-    .btn-phonepe { background: #5f259f; }
-    .btn-gpay { background: #1a73e8; }
-    .btn-paytm { background: #00baf2; color: #002e6e; }
-    .btn-bhim { background: #ff6f00; }
-    .btn-whatsapp { background: #25d366; color: #fff; width: 100%; text-decoration: none; display: block; padding: 10px; border-radius: 6px; font-weight: bold; font-size: 0.9rem; }
+.app-buttons {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%; margin-top: 5px;
+}
+.pay-app-btn {
+  padding: 10px; font-size: 0.85rem; border-radius: 6px; font-weight: bold;
+  text-decoration: none; text-align: center; color: #fff; display: block;
+}
+.btn-phonepe { background: #5f259f; }
+.btn-gpay { background: #1a73e8; }
+.btn-paytm { background: #00baf2; color: #002e6e; }
+.btn-bhim { background: #ff6f00; }
+.btn-whatsapp { background: #25d366; color: #fff; width: 100%; text-decoration: none; display: block; padding: 10px; border-radius: 6px; font-weight: bold; font-size: 0.9rem; }
 
-    .disclaimer {
-      font-size: 0.75rem; color: #e57373; background: rgba(198, 40, 40, 0.15);
-      padding: 8px; border-radius: 6px; border: 1px solid #c62828; margin-top: 5px;
-    }
+.disclaimer {
+  font-size: 0.75rem; color: #e57373; background: rgba(198, 40, 40, 0.15);
+  padding: 8px; border-radius: 6px; border: 1px solid #c62828; margin-top: 5px;
+}
 
-    /* Cards Layout */
-    .card { background: var(--card-bg); padding: 15px; border-radius: 10px; border: 1px solid var(--border-color); }
-    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-    .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+/* Cards Layout */
+.card { background: var(--card-bg); padding: 15px; border-radius: 10px; border: 1px solid var(--border-color); }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
 
-    /* Score Display */
-    .score-banner { text-align: center; background: #182232; padding: 15px; border-radius: 8px; border: 1px solid rgba(0, 229, 255, 0.2); }
-    .big-score { font-size: 2.5rem; font-weight: bold; color: #4caf50; }
-    .sub-score { font-size: 1rem; color: var(--text-muted); margin-top: 5px; }
+/* Score Display */
+.score-banner { text-align: center; background: #182232; padding: 15px; border-radius: 8px; border: 1px solid rgba(0, 229, 255, 0.2); }
+.big-score { font-size: 2.5rem; font-weight: bold; color: #4caf50; }
+.sub-score { font-size: 1rem; color: var(--text-muted); margin-top: 5px; }
 
-    /* Form Inputs & Buttons */
-    label { font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 4px; }
-    input, select {
-      width: 100%; padding: 8px 10px; border-radius: 6px; border: 1px solid var(--border-color);
-      background: var(--input-bg); color: #fff; font-size: 0.9rem; outline: none;
-    }
-    input:focus, select:focus { border-color: var(--accent-cyan); }
-    
-    button {
-      padding: 12px; border: none; border-radius: 6px; font-weight: bold;
-      color: #fff; cursor: pointer; transition: 0.2s opacity, 0.2s transform;
-    }
-    button:hover { opacity: 0.9; }
-    button:active { transform: scale(0.98); }
+/* Form Inputs & Buttons */
+label { font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 4px; }
+input, select {
+  width: 100%; padding: 8px 10px; border-radius: 6px; border: 1px solid var(--border-color);
+  background: var(--input-bg); color: #fff; font-size: 0.9rem; outline: none;
+}
+input:focus, select:focus { border-color: var(--accent-cyan); }
+button {
+  padding: 12px; border: none; border-radius: 6px; font-weight: bold;
+  color: #fff; cursor: pointer; transition: 0.2s opacity, 0.2s transform;
+}
+button:hover { opacity: 0.9; }
+button:active { transform: scale(0.98); }
 
-    .btn-green { background: linear-gradient(135deg, #2e7d32, #1b5e20); }
-    .btn-blue { background: linear-gradient(135deg, #1565c0, #0d47a1); }
-    .btn-red { background: linear-gradient(135deg, #ff1744, #d50000); }
-    .btn-dark { background: #1a2332; color: #fff; border: 1px solid var(--border-color); }
-    .btn-orange { background: #e65100; }
+.btn-green { background: linear-gradient(135deg, #2e7d32, #1b5e20); }
+.btn-blue { background: linear-gradient(135deg, #1565c0, #0d47a1); }
+.btn-red { background: linear-gradient(135deg, #ff1744, #d50000); }
+.btn-dark { background: #1a2332; color: #fff; border: 1px solid var(--border-color); }
+.btn-orange { background: #e65100; }
+.btn-undo { background: linear-gradient(135deg, #d81b60, #8e24aa); color: #fff; font-size: 1rem; box-shadow: 0 4px 12px rgba(216, 27, 96, 0.4); }
 
-    /* Custom Banners */
-    #target-banner { display: none; justify-style: space-between; background: #1a237e; padding: 10px; border-radius: 6px; }
-    #status-banner { display: none; text-align: center; font-weight: bold; background: #f57f17; color: #000; padding: 8px; border-radius: 6px; }
-  </style>
+/* Custom Banners */
+#target-banner { display: none; justify-content: space-between; background: #1a237e; padding: 10px; border-radius: 6px; }
+#status-banner { display: none; text-align: center; font-weight: bold; background: #f57f17; color: #000; padding: 8px; border-radius: 6px; }
+
+/* Full-Screen Trigger Animation Overlay (OBS / Local Preview) */
+#animOverlay {
+  position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+  background: rgba(0, 0, 0, 0.85); display: none; align-items: center;
+  justify-content: center; z-index: 2000; pointer-events: none;
+}
+#animText {
+  font-size: 5rem; font-weight: 900; letter-spacing: 4px;
+  text-transform: uppercase; text-shadow: 0 0 30px currentColor;
+  animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+@keyframes popIn {
+  0% { transform: scale(0.2); opacity: 0; }
+  50% { transform: scale(1.15); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+</style>
 </head>
 <body>
 
-  <!-- PASSKEY & PAYMENT MODAL -->
-  <div id="paywallModal">
-    <div class="modal-card">
-      
-      <!-- BACKGROUND LOGO WATERMARK -->
-      <svg class="card-bg-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 120">
-        <defs>
-          <linearGradient id="bgGlow" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stop-color="#FF1744" />
-            <stop offset="100%" stop-color="#D50000" />
-          </linearGradient>
-        </defs>
-        <g transform="translate(15, 10)">
-          <circle cx="50" cy="50" r="38" fill="url(#bgGlow)" />
-          <path d="M 28 28 C 38 40 38 60 28 72 M 72 28 C 62 40 62 60 72 72" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" fill="none" />
-          <path d="M 0 50 H 22 L 32 30 L 44 72 L 56 32 L 66 58 L 76 50 H 100" stroke="#00E5FF" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none" />
-        </g>
-        <text x="125" y="62" font-family="sans-serif" font-weight="900" font-size="34" fill="#FFFFFF">PULSE</text>
-        <text x="126" y="88" font-family="sans-serif" font-weight="700" font-size="16" fill="#00E5FF" letter-spacing="5">STREAMING</text>
-      </svg>
+<!-- FULL SCREEN ANIMATION POPUP OVERLAY -->
+<div id="animOverlay">
+  <div id="animText">SIX!</div>
+</div>
 
-      <div class="card-content">
-        <!-- HEADER PULSE STREAMING LOGO -->
-        <div class="brand-header">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 120">
-            <defs>
-              <linearGradient id="headerGlow" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stop-color="#FF1744" />
-                <stop offset="100%" stop-color="#D50000" />
-              </linearGradient>
-            </defs>
-            <g transform="translate(15, 10)">
-              <circle cx="50" cy="50" r="38" fill="url(#headerGlow)" />
-              <path d="M 28 28 C 38 40 38 60 28 72 M 72 28 C 62 40 62 60 72 72" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" fill="none" />
-              <path d="M 0 50 H 22 L 32 30 L 44 72 L 56 32 L 66 58 L 76 50 H 100" stroke="#00E5FF" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none" />
-            </g>
-            <text x="125" y="62" font-family="sans-serif" font-weight="900" font-size="34" fill="#FFFFFF">PULSE</text>
-            <text x="126" y="88" font-family="sans-serif" font-weight="700" font-size="16" fill="#00E5FF" letter-spacing="5">STREAMING</text>
-          </svg>
-          <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 5px;">Enter Access Key to unlock scoring controls</p>
-        </div>
-        
-        <input type="text" id="accessKeyInput" placeholder="Enter Access Key">
-        <button class="btn-red" style="width:100%;" onclick="verifyLicenseKey()">UNLOCK CONTROLLER</button>
+<!-- PASSKEY & PAYMENT MODAL -->
+<div id="paywallModal">
+<div class="modal-card">
+<svg class="card-bg-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 120">
+<defs>
+<linearGradient id="bgGlow" x1="0%" y1="0%" x2="100%" y2="0%">
+<stop offset="0%" stop-color="#FF1744" />
+<stop offset="100%" stop-color="#D50000" />
+</linearGradient>
+</defs>
+<g transform="translate(15, 10)">
+<circle cx="50" cy="50" r="38" fill="url(#bgGlow)" />
+<path d="M 28 28 C 38 40 38 60 28 72 M 72 28 C 62 40 62 60 72 72" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" fill="none" />
+<path d="M 0 50 H 22 L 32 30 L 44 72 L 56 32 L 66 58 L 76 50 H 100" stroke="#00E5FF" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+</g>
+<text x="125" y="62" font-family="sans-serif" font-weight="900" font-size="34" fill="#FFFFFF">PULSE</text>
+<text x="126" y="88" font-family="sans-serif" font-weight="700" font-size="16" fill="#00E5FF" letter-spacing="5">STREAMING</text>
+</svg>
 
-        <!-- PAYMENT / UPI SECTION -->
-        <div class="payment-box">
-          <div class="price-tag">Access Fee: ₹99</div>
-          <p style="font-size: 0.8rem; color: var(--text-muted);">Scan QR or select your payment app below:</p>
-          
-          <!-- UPI QR Code -->
-          <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=upi%3A%2F%2Fpay%3Fpa%3D920156929%40ibl%26pn%3DBank%2520Of%2520India%26am%3D99%26cu%3DINR" alt="UPI QR Code">
-          
-          <div class="upi-id">UPI ID: <span>920156929@ibl</span></div>
+<div class="card-content">
+<div class="brand-header">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 120">
+<defs>
+<linearGradient id="headerGlow" x1="0%" y1="0%" x2="100%" y2="0%">
+<stop offset="0%" stop-color="#FF1744" />
+<stop offset="100%" stop-color="#D50000" />
+</linearGradient>
+</defs>
+<g transform="translate(15, 10)">
+<circle cx="50" cy="50" r="38" fill="url(#headerGlow)" />
+<path d="M 28 28 C 38 40 38 60 28 72 M 72 28 C 62 40 62 60 72 72" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" fill="none" />
+<path d="M 0 50 H 22 L 32 30 L 44 72 L 56 32 L 66 58 L 76 50 H 100" stroke="#00E5FF" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+</g>
+<text x="125" y="62" font-family="sans-serif" font-weight="900" font-size="34" fill="#FFFFFF">PULSE</text>
+<text x="126" y="88" font-family="sans-serif" font-weight="700" font-size="16" fill="#00E5FF" letter-spacing="5">STREAMING</text>
+</svg>
+<p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 5px;">Enter Access Key to unlock scoring controls</p>
+</div>
+<input type="text" id="accessKeyInput" placeholder="Enter Access Key">
+<button class="btn-red" style="width:100%;" onclick="verifyLicenseKey()">UNLOCK CONTROLLER</button>
 
-          <!-- Direct UPI App Buttons -->
-          <div class="app-buttons">
-            <a href="upi://pay?pa=920156929@ibl&pn=Bank%20Of%20India&am=99&cu=INR" class="pay-app-btn btn-phonepe">PhonePe</a>
-            <a href="upi://pay?pa=920156929@ibl&pn=Bank%20Of%20India&am=99&cu=INR" class="pay-app-btn btn-gpay">Google Pay</a>
-            <a href="upi://pay?pa=920156929@ibl&pn=Bank%20Of%20India&am=99&cu=INR" class="pay-app-btn btn-paytm">Paytm</a>
-            <a href="upi://pay?pa=920156929@ibl&pn=Bank%20Of%20India&am=99&cu=INR" class="pay-app-btn btn-bhim">BHIM</a>
-          </div>
+<div class="payment-box">
+<div class="price-tag">Access Fee: ₹99</div>
+<p style="font-size: 0.8rem; color: var(--text-muted);">Scan QR or select your payment app below:</p>
+<img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=upi%3A%2F%2Fpay%3Fpa%3D920156929%40ibl%26pn%3DBank%2520Of%2520India%26am%3D99%26cu%3DINR" alt="UPI QR Code">
+<div class="upi-id">UPI ID: <span>920156929@ibl</span></div>
 
-          <!-- WhatsApp Link Button -->
-          <a href="https://wa.me/91920156929?text=Hi%2C%20I%20paid%20%E2%82%B999%20for%20the%20Cricket%20Score%20Controller.%20Please%20send%20my%20passkey." target="_blank" class="btn-whatsapp">
-            💬 Send Screenshot on WhatsApp
-          </a>
+<div class="app-buttons">
+<a href="upi://pay?pa=920156929@ibl&pn=Bank%20Of%20India&am=99&cu=INR" class="pay-app-btn btn-phonepe">PhonePe</a>
+<a href="upi://pay?pa=920156929@ibl&pn=Bank%20Of%20India&am=99&cu=INR" class="pay-app-btn btn-gpay">Google Pay</a>
+<a href="upi://pay?pa=920156929@ibl&pn=Bank%20Of%20India&am=99&cu=INR" class="pay-app-btn btn-paytm">Paytm</a>
+<a href="upi://pay?pa=920156929@ibl&pn=Bank%20Of%20India&am=99&cu=INR" class="pay-app-btn btn-bhim">BHIM</a>
+</div>
 
-          <!-- Disclaimer -->
-          <div class="disclaimer">
-            ⚠️ <strong>Disclaimer:</strong> Generating passkey can take time, so please wait after sending your payment screenshot.
-          </div>
-        </div>
-      </div>
+<a href="https://wa.me/91920156929?text=Hi%2C%20I%20paid%20%E2%82%B999%20for%20the%20Cricket%20Score%20Controller.%20Please%20send%20my%20passkey." target="_blank" class="btn-whatsapp">
+💬 Send Screenshot on WhatsApp
+</a>
 
-    </div>
-  </div>
+<div class="disclaimer">
+⚠️ <strong>Disclaimer:</strong> Generating passkey can take time, so please wait after sending your payment screenshot.
+</div>
+</div>
+</div>
+</div>
+</div>
 
-  <!-- MAIN CONTROLLER APP -->
-  <div class="container" id="appContainer">
+<!-- MAIN CONTROLLER APP -->
+<div class="container" id="appContainer">
 
-    <div class="brand-header">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 120">
-        <defs>
-          <linearGradient id="headerGlow2" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stop-color="#FF1744" />
-            <stop offset="100%" stop-color="#D50000" />
-          </linearGradient>
-        </defs>
-        <g transform="translate(15, 10)">
-          <circle cx="50" cy="50" r="38" fill="url(#headerGlow2)" />
-          <path d="M 28 28 C 38 40 38 60 28 72 M 72 28 C 62 40 62 60 72 72" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" fill="none" />
-          <path d="M 0 50 H 22 L 32 30 L 44 72 L 56 32 L 66 58 L 76 50 H 100" stroke="#00E5FF" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none" />
-        </g>
-        <text x="125" y="62" font-family="sans-serif" font-weight="900" font-size="34" fill="#FFFFFF">PULSE</text>
-        <text x="126" y="88" font-family="sans-serif" font-weight="700" font-size="16" fill="#00E5FF" letter-spacing="5">STREAMING</text>
-      </svg>
-    </div>
+<div class="brand-header">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 120">
+<defs>
+<linearGradient id="headerGlow2" x1="0%" y1="0%" x2="100%" y2="0%">
+<stop offset="0%" stop-color="#FF1744" />
+<stop offset="100%" stop-color="#D50000" />
+</linearGradient>
+</defs>
+<g transform="translate(15, 10)">
+<circle cx="50" cy="50" r="38" fill="url(#headerGlow2)" />
+<path d="M 28 28 C 38 40 38 60 28 72 M 72 28 C 62 40 62 60 72 72" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" fill="none" />
+<path d="M 0 50 H 22 L 32 30 L 44 72 L 56 32 L 66 58 L 76 50 H 100" stroke="#00E5FF" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+</g>
+<text x="125" y="62" font-family="sans-serif" font-weight="900" font-size="34" fill="#FFFFFF">PULSE</text>
+<text x="126" y="88" font-family="sans-serif" font-weight="700" font-size="16" fill="#00E5FF" letter-spacing="5">STREAMING</text>
+</svg>
+</div>
 
-    <div id="status-banner"></div>
+<div id="status-banner"></div>
 
-    <!-- LIVE SCORE OVERVIEW -->
-    <div class="card score-banner">
-      <div>
-        <span id="out-team-a">TEAM A</span> vs <span id="out-team-b">TEAM B</span>
-      </div>
-      <div class="big-score">
-        <span id="runs">0</span> / <span id="wickets">0</span>
-        <span style="font-size:1.2rem; color:#aaa;">(<span id="overs">0.0</span> / <span id="out-max-overs">20</span> ov)</span>
-      </div>
-      <div class="sub-score" id="out-striker">Striker* 0 (0)</div>
-      <div class="sub-score" id="out-non-striker">Non-Striker 0 (0)</div>
-      <div class="sub-score" id="out-bowler">Bowler 0-0 (0.0)</div>
-      <div class="sub-score" id="out-this-over">THIS OVER: [ - ]</div>
-    </div>
+<!-- LIVE SCORE OVERVIEW -->
+<div class="card score-banner">
+<div>
+<span id="out-team-a">TEAM A</span> vs <span id="out-team-b">TEAM B</span>
+</div>
+<div class="big-score">
+<span id="runs">0</span> / <span id="wickets">0</span>
+<span style="font-size:1.2rem; color:#aaa;">(<span id="overs">0.0</span> / <span id="out-max-overs">20</span> ov)</span>
+</div>
+<div class="sub-score" id="out-striker">Striker* 0 (0)</div>
+<div class="sub-score" id="out-non-striker">Non-Striker 0 (0)</div>
+<div class="sub-score" id="out-bowler">Bowler 0-0 (0.0)</div>
+<div class="sub-score" id="out-this-over">THIS OVER: [ - ]</div>
+</div>
 
-    <!-- TARGET BANNER (2nd Innings) -->
-    <div id="target-banner">
-      <span>TARGET: <strong id="out-target">0</strong></span>
-      <span id="out-need">NEED 0 OFF 0 BALLS</span>
-      <span>RRR: <strong id="out-rrr">0.00</strong></span>
-    </div>
+<!-- TARGET BANNER (2nd Innings) -->
+<div id="target-banner">
+<span>TARGET: <strong id="out-target">0</strong></span>
+<span id="out-need">NEED 0 OFF 0 BALLS</span>
+<span>RRR: <strong id="out-rrr">0.00</strong></span>
+</div>
 
-    <!-- MATCH SETUP -->
-    <div class="card grid-2">
-      <div>
-        <label>Team A (Batting)</label>
-        <input type="text" id="in-team-a" value="TEAM A" onchange="sync()">
-      </div>
-      <div>
-        <label>Team B (Bowling)</label>
-        <input type="text" id="in-team-b" value="TEAM B" onchange="sync()">
-      </div>
-      <div>
-        <label>Innings</label>
-        <select id="in-innings" onchange="sync()">
-          <option value="1">1st Innings</option>
-          <option value="2">2nd Innings</option>
-        </select>
-      </div>
-      <div>
-        <label>Max Overs</label>
-        <input type="number" id="in-max-overs" value="20" onchange="sync()">
-      </div>
-      <div>
-        <label>Target Runs (Innings 2)</label>
-        <input type="number" id="in-target" value="0" onchange="sync()">
-      </div>
-    </div>
+<!-- MATCH SETUP -->
+<div class="card grid-2">
+<div>
+<label>Team A (Batting)</label>
+<input type="text" id="in-team-a" value="TEAM A" onchange="sync()">
+</div>
+<div>
+<label>Team B (Bowling)</label>
+<input type="text" id="in-team-b" value="TEAM B" onchange="sync()">
+</div>
+<div>
+<label>Innings</label>
+<select id="in-innings" onchange="sync()">
+<option value="1">1st Innings</option>
+<option value="2">2nd Innings</option>
+</select>
+</div>
+<div>
+<label>Max Overs</label>
+<input type="number" id="in-max-overs" value="20" onchange="sync()">
+</div>
+<div>
+<label>Target Runs (Innings 2)</label>
+<input type="number" id="in-target" value="0" onchange="sync()">
+</div>
+</div>
 
-    <!-- PLAYERS INNINGS SETUP -->
-    <div class="card grid-3">
-      <div>
-        <label>Striker Name</label>
-        <input type="text" id="in-striker" value="Striker" onchange="sync()">
-      </div>
-      <div>
-        <label>Non-Striker Name</label>
-        <input type="text" id="in-non-striker" value="Non-Striker" onchange="sync()">
-      </div>
-      <div>
-        <label>Current Bowler</label>
-        <input type="text" id="in-bowler" value="Bowler" onchange="onBowlerChange()">
-      </div>
-    </div>
+<!-- PLAYERS INNINGS SETUP -->
+<div class="card grid-3">
+<div>
+<label>Striker Name</label>
+<input type="text" id="in-striker" value="Striker" onchange="sync()">
+</div>
+<div>
+<label>Non-Striker Name</label>
+<input type="text" id="in-non-striker" value="Non-Striker" onchange="sync()">
+</div>
+<div>
+<label>Current Bowler</label>
+<input type="text" id="in-bowler" value="Bowler" onchange="onBowlerChange()">
+</div>
+</div>
 
-    <!-- RUN BUTTONS -->
-    <div class="card grid-4">
-      <button class="btn-dark" onclick="addBall(0, '0')">0 RUN</button>
-      <button class="btn-dark" onclick="addBall(1, '1')">+1 RUN</button>
-      <button class="btn-dark" onclick="addBall(2, '2')">+2 RUNS</button>
-      <button class="btn-dark" onclick="addBall(3, '3')">+3 RUNS</button>
-      <button class="btn-blue" onclick="addBall(4, '4', 'FOUR')">FOUR (4)</button>
-      <button class="btn-green" onclick="addBall(6, '6', 'SIX')">SIX (6)</button>
-      <button class="btn-red" onclick="addWicket()">WICKET</button>
-      <button class="btn-orange" onclick="swapStrike()">SWAP STRIKE</button>
-    </div>
+<!-- RUN BUTTONS -->
+<div class="card grid-4">
+<button class="btn-dark" onclick="addBall(0, '0')">0 RUN</button>
+<button class="btn-dark" onclick="addBall(1, '1')">+1 RUN</button>
+<button class="btn-dark" onclick="addBall(2, '2')">+2 RUNS</button>
+<button class="btn-dark" onclick="addBall(3, '3')">+3 RUNS</button>
+<button class="btn-blue" onclick="addBall(4, '4', 'FOUR')">FOUR (4)</button>
+<button class="btn-green" onclick="addBall(6, '6', 'SIX')">SIX (6)</button>
+<button class="btn-red" onclick="addWicket()">WICKET</button>
+<button class="btn-orange" onclick="swapStrike()">SWAP STRIKE</button>
+</div>
 
-    <!-- EXTRAS & ADJUSTMENTS -->
-    <div class="card grid-3">
-      <button class="btn-dark" onclick="addExtra('wd', 'WD')">+1 WIDE</button>
-      <button class="btn-dark" onclick="addExtra('nb', 'NB')">+1 NO BALL</button>
-      <button class="btn-dark" onclick="addExtra('b', '1B')">+1 BYE</button>
-      <button class="btn-dark" onclick="manualAdjust('runs', 1)">+1 Run (Manual)</button>
-      <button class="btn-dark" onclick="manualAdjust('runs', -1)">-1 Run (Manual)</button>
-      <button class="btn-dark" onclick="manualAdjust('balls', -1)">-1 Ball (Manual)</button>
-    </div>
+<!-- EXTRAS & UNDO ACTION CONTROLS -->
+<div class="card grid-3">
+<button class="btn-dark" onclick="addExtra('wd', 'WD')">+1 WIDE</button>
+<button class="btn-dark" onclick="addExtra('nb', 'NB')">+1 NO BALL</button>
+<button class="btn-dark" onclick="addExtra('b', '1B')">+1 BYE</button>
+<button class="btn-dark" onclick="manualAdjust('runs', 1)">+1 Run (Manual)</button>
+<button class="btn-dark" onclick="manualAdjust('runs', -1)">-1 Run (Manual)</button>
+<button class="btn-dark" onclick="manualAdjust('balls', -1)">-1 Ball (Manual)</button>
+</div>
 
-    <button class="btn-red" style="width: 100%; margin-top: 10px;" onclick="logout()">LOGOUT SESSION</button>
+<!-- DEDICATED UNDO BUTTON -->
+<button class="btn-undo" style="width: 100%; margin-top: 10px;" onclick="undoLastAction()">↩️ UNDO LAST BALL / ACTION</button>
 
-  </div>
+<button class="btn-red" style="width: 100%; margin-top: 10px;" onclick="logout()">LOGOUT SESSION</button>
 
-  <!-- FIREBASE SDKs -->
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+</div>
 
-  <script>
-    // System version lock: Increment this tag to force-logout everyone globally
-    const SYSTEM_AUTH_VERSION = "v2_reset";
+<!-- FIREBASE SDKs -->
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
-    const firebaseConfig = {
-      databaseURL: "https://betterone48-207a0-default-rtdb.asia-southeast1.firebasedatabase.app"
-    };
-    firebase.initializeApp(firebaseConfig);
+<script>
+const SYSTEM_AUTH_VERSION = "v2_reset";
 
-    let db = null;
-    let activeMatchId = 'match_1';
+const firebaseConfig = {
+  databaseURL: "https://betterone48-207a0-default-rtdb.asia-southeast1.firebasedatabase.app"
+};
+firebase.initializeApp(firebaseConfig);
 
-    let runs = 0, wickets = 0, legalBalls = 0;
-    let strikerRuns = 0, strikerBalls = 0;
-    let nonStrikerRuns = 0, nonStrikerBalls = 0;
-    let bowlerRuns = 0, bowlerWickets = 0, bowlerBalls = 0;
-    let currentOverBalls = [];
-    let matchStatusText = "";
+let db = null;
+let activeMatchId = 'match_1';
 
-    function checkSavedLicense() {
-      const savedVersion = localStorage.getItem('cricket_auth_version');
+let runs = 0, wickets = 0, legalBalls = 0;
+let strikerRuns = 0, strikerBalls = 0;
+let nonStrikerRuns = 0, nonStrikerBalls = 0;
+let bowlerRuns = 0, bowlerWickets = 0, bowlerBalls = 0;
+let currentOverBalls = [];
+let matchStatusText = "";
 
-      if (savedVersion !== SYSTEM_AUTH_VERSION) {
-        localStorage.clear();
-        localStorage.setItem('cricket_auth_version', SYSTEM_AUTH_VERSION);
-        lockApp();
-        return;
+// State Stack for Undo Functionality
+let historyStack = [];
+
+function saveState() {
+  const currentState = {
+    runs, wickets, legalBalls,
+    strikerRuns, strikerBalls,
+    nonStrikerRuns, nonStrikerBalls,
+    bowlerRuns, bowlerWickets, bowlerBalls,
+    currentOverBalls: [...currentOverBalls],
+    strikerName: document.getElementById('in-striker').value,
+    nonStrikerName: document.getElementById('in-non-striker').value,
+    bowlerName: document.getElementById('in-bowler').value
+  };
+  historyStack.push(JSON.stringify(currentState));
+  if (historyStack.length > 20) historyStack.shift(); // Keep last 20 states
+}
+
+function undoLastAction() {
+  if (historyStack.length === 0) {
+    alert("No previous ball or action to undo!");
+    return;
+  }
+  const lastState = JSON.parse(historyStack.pop());
+  runs = lastState.runs;
+  wickets = lastState.wickets;
+  legalBalls = lastState.legalBalls;
+  strikerRuns = lastState.strikerRuns;
+  strikerBalls = lastState.strikerBalls;
+  nonStrikerRuns = lastState.nonStrikerRuns;
+  nonStrikerBalls = lastState.nonStrikerBalls;
+  bowlerRuns = lastState.bowlerRuns;
+  bowlerWickets = lastState.bowlerWickets;
+  bowlerBalls = lastState.bowlerBalls;
+  currentOverBalls = lastState.currentOverBalls;
+
+  document.getElementById('in-striker').value = lastState.strikerName;
+  document.getElementById('in-non-striker').value = lastState.nonStrikerName;
+  document.getElementById('in-bowler').value = lastState.bowlerName;
+
+  sync();
+}
+
+function checkSavedLicense() {
+  const savedVersion = localStorage.getItem('cricket_auth_version');
+
+  if (savedVersion !== SYSTEM_AUTH_VERSION) {
+    localStorage.clear();
+    localStorage.setItem('cricket_auth_version', SYSTEM_AUTH_VERSION);
+    lockApp();
+    return;
+  }
+
+  const savedKey = localStorage.getItem('cricket_passkey');
+  const savedMatchId = localStorage.getItem('cricket_match_id');
+
+  if (savedKey && savedMatchId && savedMatchId !== "undefined" && savedMatchId !== "null") {
+    initMatchDatabase(savedMatchId);
+    unlockApp();
+  } else {
+    lockApp();
+  }
+}
+
+function verifyLicenseKey() {
+  const enteredKey = document.getElementById('accessKeyInput').value.trim();
+  if (!enteredKey) {
+    alert("Please enter a passkey!");
+    return;
+  }
+
+  firebase.database().ref('passkeys/' + enteredKey).once('value')
+  .then((snapshot) => {
+    if (snapshot.exists()) {
+      let targetMatchId = 'match_1';
+      const data = snapshot.val();
+
+      if (typeof data === 'string' && data.trim() !== '') {
+        targetMatchId = data.trim();
+      } else if (typeof data === 'object' && data !== null && data.matchId) {
+        targetMatchId = data.matchId;
       }
 
-      const savedKey = localStorage.getItem('cricket_passkey');
-      const savedMatchId = localStorage.getItem('cricket_match_id');
+      localStorage.setItem('cricket_passkey', enteredKey);
+      localStorage.setItem('cricket_match_id', targetMatchId);
+      localStorage.setItem('cricket_auth_version', SYSTEM_AUTH_VERSION);
 
-      if (savedKey && savedMatchId && savedMatchId !== "undefined" && savedMatchId !== "null") {
-        initMatchDatabase(savedMatchId);
-        unlockApp();
+      initMatchDatabase(targetMatchId);
+      unlockApp();
+    } else {
+      alert("Invalid or revoked passkey!");
+    }
+  })
+  .catch((err) => {
+    console.error(err);
+    alert("Error verifying key.");
+  });
+}
+
+function lockApp() {
+  const modal = document.getElementById('paywallModal');
+  if (modal) modal.style.display = 'flex';
+
+  const app = document.getElementById('appContainer');
+  if (app) app.style.display = 'none';
+}
+
+function unlockApp() {
+  const modal = document.getElementById('paywallModal');
+  if (modal) modal.style.display = 'none';
+
+  const app = document.getElementById('appContainer');
+  if (app) app.style.display = 'flex';
+}
+
+function logout() {
+  localStorage.clear();
+  location.reload();
+}
+
+function triggerAnimation(type) {
+  const overlay = document.getElementById('animOverlay');
+  const text = document.getElementById('animText');
+  
+  if (!overlay || !text) return;
+
+  if (type === 'SIX') {
+    text.innerText = '💥 SIX! 💥';
+    text.style.color = '#00e5ff';
+  } else if (type === 'FOUR') {
+    text.innerText = '⚡ FOUR! ⚡';
+    text.style.color = '#ffeb3b';
+  } else if (type === 'WICKET') {
+    text.innerText = '☝️ WICKET! ☝️';
+    text.style.color = '#ff1744';
+  } else {
+    return;
+  }
+
+  overlay.style.display = 'flex';
+  setTimeout(() => {
+    overlay.style.display = 'none';
+  }, 2200);
+}
+
+function initMatchDatabase(matchId) {
+  if (!matchId || matchId === "undefined" || matchId === "null" || matchId.trim() === "") {
+    matchId = 'match_1';
+  }
+  activeMatchId = matchId;
+  db = firebase.database().ref('matches/' + activeMatchId);
+
+  db.on('value', (snapshot) => {
+    const data = snapshot.val();
+    if (data) {
+      document.getElementById('out-team-a').innerText = data.teamA || 'TEAM A';
+      document.getElementById('out-team-b').innerText = data.teamB || 'TEAM B';
+      document.getElementById('out-striker').innerText = `${data.strikerName || 'Striker'}* ${data.strikerRuns || 0} (${data.strikerBalls || 0})`;
+      document.getElementById('out-non-striker').innerText = `${data.nonStrikerName || 'Non-Striker'} ${data.nonStrikerRuns || 0} (${data.nonStrikerBalls || 0})`;
+      document.getElementById('out-bowler').innerText = `${data.bowler || 'Bowler'} ${data.bowlerWickets || 0}-${data.bowlerRuns || 0} (${data.bowlerOvers || '0.0'})`;
+      document.getElementById('out-this-over').innerText = `THIS OVER: [ ${data.thisOver || '-'} ]`;
+
+      document.getElementById('runs').innerText = data.runs !== undefined ? data.runs : 0;
+      document.getElementById('wickets').innerText = data.wickets !== undefined ? data.wickets : 0;
+      document.getElementById('overs').innerText = data.overs || "0.0";
+      document.getElementById('out-max-overs').innerText = data.maxOvers || 20;
+
+      const targetBanner = document.getElementById('target-banner');
+      if (data.innings === "2") {
+        targetBanner.style.display = 'flex';
+        document.getElementById('out-target').innerText = data.target || 0;
+        document.getElementById('out-need').innerText = `NEED ${data.needRuns || 0} OFF ${data.remainingBalls || 0} BALLS`;
+        document.getElementById('out-rrr').innerText = data.rrr || "0.00";
       } else {
-        lockApp();
-      }
-    }
-
-    function verifyLicenseKey() {
-      const enteredKey = document.getElementById('accessKeyInput').value.trim();
-      if (!enteredKey) {
-        alert("Please enter a passkey!");
-        return;
+        targetBanner.style.display = 'none';
       }
 
-      firebase.database().ref('passkeys/' + enteredKey).once('value')
-        .then((snapshot) => {
-          if (snapshot.exists()) {
-            let targetMatchId = 'match_1';
-            const data = snapshot.val();
-
-            if (typeof data === 'string' && data.trim() !== '') {
-              targetMatchId = data.trim();
-            } else if (typeof data === 'object' && data !== null && data.matchId) {
-              targetMatchId = data.matchId;
-            }
-
-            localStorage.setItem('cricket_passkey', enteredKey);
-            localStorage.setItem('cricket_match_id', targetMatchId);
-            localStorage.setItem('cricket_auth_version', SYSTEM_AUTH_VERSION);
-
-            initMatchDatabase(targetMatchId);
-            unlockApp();
-          } else {
-            alert("Invalid or revoked passkey!");
-          }
-        })
-        .catch((err) => {
-          console.error(err);
-          alert("Error verifying key.");
-        });
-    }
-
-    function lockApp() {
-      const modal = document.getElementById('paywallModal');
-      if (modal) modal.style.display = 'flex';
-
-      const app = document.getElementById('appContainer');
-      if (app) app.style.display = 'none';
-    }
-
-    function unlockApp() {
-      const modal = document.getElementById('paywallModal');
-      if (modal) modal.style.display = 'none';
-
-      const app = document.getElementById('appContainer');
-      if (app) app.style.display = 'flex';
-    }
-
-    function logout() {
-      localStorage.clear();
-      location.reload();
-    }
-
-    function initMatchDatabase(matchId) {
-      if (!matchId || matchId === "undefined" || matchId === "null" || matchId.trim() === "") {
-        matchId = 'match_1';
-      }
-      
-      activeMatchId = matchId;
-      db = firebase.database().ref('matches/' + activeMatchId);
-
-      db.on('value', (snapshot) => {
-        const data = snapshot.val();
-        if (data) {
-          document.getElementById('out-team-a').innerText = data.teamA || 'TEAM A';
-          document.getElementById('out-team-b').innerText = data.teamB || 'TEAM B';
-          
-          document.getElementById('out-striker').innerText = `${data.strikerName || 'Striker'}* ${data.strikerRuns || 0} (${data.strikerBalls || 0})`;
-          document.getElementById('out-non-striker').innerText = `${data.nonStrikerName || 'Non-Striker'} ${data.nonStrikerRuns || 0} (${data.nonStrikerBalls || 0})`;
-          
-          document.getElementById('out-bowler').innerText = `${data.bowler || 'Bowler'} ${data.bowlerWickets || 0}-${data.bowlerRuns || 0} (${data.bowlerOvers || '0.0'})`;
-          document.getElementById('out-this-over').innerText = `THIS OVER: [ ${data.thisOver || '-'} ]`;
-
-          document.getElementById('runs').innerText = data.runs !== undefined ? data.runs : 0;
-          document.getElementById('wickets').innerText = data.wickets !== undefined ? data.wickets : 0;
-          document.getElementById('overs').innerText = data.overs || "0.0";
-          document.getElementById('out-max-overs').innerText = data.maxOvers || 20;
-
-          const targetBanner = document.getElementById('target-banner');
-          if (data.innings === "2") {
-            targetBanner.style.display = 'flex';
-            document.getElementById('out-target').innerText = data.target || 0;
-            document.getElementById('out-need').innerText = `NEED ${data.needRuns || 0} OFF ${data.remainingBalls || 0} BALLS`;
-            document.getElementById('out-rrr').innerText = data.rrr || "0.00";
-          } else {
-            targetBanner.style.display = 'none';
-          }
-
-          const statusBanner = document.getElementById('status-banner');
-          if (data.matchStatusText && data.matchStatusText !== "") {
-            statusBanner.innerText = data.matchStatusText;
-            statusBanner.style.display = 'block';
-          } else {
-            statusBanner.style.display = 'none';
-          }
-        }
-      });
-
-      sync();
-    }
-
-    window.onload = checkSavedLicense;
-
-    function checkInningsAutoSwitch() {
-      const maxOvers = parseInt(document.getElementById('in-max-overs').value) || 20;
-      const innings = document.getElementById('in-innings').value;
-      const totalMatchBalls = maxOvers * 6;
-
-      if (innings === "1" && (legalBalls >= totalMatchBalls || wickets >= 10)) {
-        const autoTarget = runs + 1;
-        alert(`1st Innings Over!\nFinal Score: ${runs}/${wickets}\nTarget for 2nd Innings: ${autoTarget}`);
-
-        document.getElementById('in-innings').value = "2";
-        document.getElementById('in-target').value = autoTarget;
-
-        const teamA = document.getElementById('in-team-a').value;
-        const teamB = document.getElementById('in-team-b').value;
-        document.getElementById('in-team-a').value = teamB;
-        document.getElementById('in-team-b').value = teamA;
-
-        runs = 0; wickets = 0; legalBalls = 0;
-        strikerRuns = 0; strikerBalls = 0;
-        nonStrikerRuns = 0; nonStrikerBalls = 0;
-        bowlerRuns = 0; bowlerWickets = 0; bowlerBalls = 0;
-        currentOverBalls = [];
-        
-        document.getElementById('in-striker').value = "Striker";
-        document.getElementById('in-non-striker').value = "Non-Striker";
-        document.getElementById('in-bowler').value = "Bowler Name";
-        matchStatusText = "";
-      }
-
-      if (innings === "2") {
-        const target = parseInt(document.getElementById('in-target').value) || 0;
-        const chasingTeam = document.getElementById('in-team-a').value;
-        const defendingTeam = document.getElementById('in-team-b').value;
-
-        if (runs >= target && target > 0) {
-          const wicketsLeft = 10 - wickets;
-          matchStatusText = `🏆 ${chasingTeam} WON BY ${wicketsLeft} WICKETS!`;
-        } else if ((legalBalls >= totalMatchBalls || wickets >= 10) && runs < target - 1) {
-          const margin = (target - 1) - runs;
-          matchStatusText = `🏆 ${defendingTeam} WON BY ${margin} RUNS!`;
-        } else if ((legalBalls >= totalMatchBalls || wickets >= 10) && runs === target - 1) {
-          matchStatusText = `🤝 MATCH TIED!`;
-        } else {
-          matchStatusText = "";
-        }
+      const statusBanner = document.getElementById('status-banner');
+      if (data.matchStatusText && data.matchStatusText !== "") {
+        statusBanner.innerText = data.matchStatusText;
+        statusBanner.style.display = 'block';
+      } else {
+        statusBanner.style.display = 'none';
       }
     }
+  });
 
-    function sync(animType = "") {
-      let matchKey = activeMatchId;
-      if (!matchKey || matchKey === "undefined" || matchKey === "null") {
-        matchKey = 'match_1';
-        activeMatchId = 'match_1';
-      }
+  sync();
+}
 
-      db = firebase.database().ref('matches/' + matchKey);
-      
-      checkInningsAutoSwitch();
+window.onload = checkSavedLicense;
 
-      const overNum = Math.floor(legalBalls / 6);
-      const ballNum = legalBalls % 6;
+function checkInningsAutoSwitch() {
+  const maxOvers = parseInt(document.getElementById('in-max-overs').value) || 20;
+  const innings = document.getElementById('in-innings').value;
+  const totalMatchBalls = maxOvers * 6;
 
-      const bowlerOverNum = Math.floor(bowlerBalls / 6);
-      const bowlerBallNum = bowlerBalls % 6;
+  if (innings === "1" && (legalBalls >= totalMatchBalls || wickets >= 10)) {
+    const autoTarget = runs + 1;
+    alert(`1st Innings Over!\nFinal Score: ${runs}/${wickets}\nTarget for 2nd Innings: ${autoTarget}`);
 
-      const maxOvers = parseInt(document.getElementById('in-max-overs').value) || 20;
-      const innings = document.getElementById('in-innings').value;
-      const target = parseInt(document.getElementById('in-target').value) || 0;
+    document.getElementById('in-innings').value = "2";
+    document.getElementById('in-target').value = autoTarget;
 
-      const totalBallsInMatch = maxOvers * 6;
-      const remainingBalls = Math.max(0, totalBallsInMatch - legalBalls);
-      const needRuns = Math.max(0, target - runs);
-      const rrr = remainingBalls > 0 ? ((needRuns / remainingBalls) * 6).toFixed(2) : "0.00";
+    const teamA = document.getElementById('in-team-a').value;
+    const teamB = document.getElementById('in-team-b').value;
+    document.getElementById('in-team-a').value = teamB;
+    document.getElementById('in-team-b').value = teamA;
 
-      db.set({
-        teamA: document.getElementById('in-team-a').value || 'TEAM A',
-        teamB: document.getElementById('in-team-b').value || 'TEAM B',
-        strikerName: document.getElementById('in-striker').value || 'Striker',
-        strikerRuns: strikerRuns,
-        strikerBalls: strikerBalls,
-        nonStrikerName: document.getElementById('in-non-striker').value || 'Non-Striker',
-        nonStrikerRuns: nonStrikerRuns,
-        nonStrikerBalls: nonStrikerBalls,
-        bowler: document.getElementById('in-bowler').value || 'Bowler Name',
-        bowlerRuns: bowlerRuns,
-        bowlerWickets: bowlerWickets,
-        bowlerOvers: `${bowlerOverNum}.${bowlerBallNum}`,
-        thisOver: currentOverBalls.length > 0 ? currentOverBalls.join(' | ') : '-',
-        runs: runs,
-        wickets: wickets,
-        overs: `${overNum}.${ballNum}`,
-        maxOvers: maxOvers,
-        innings: innings,
-        target: target,
-        needRuns: needRuns,
-        remainingBalls: remainingBalls,
-        rrr: rrr,
-        matchStatusText: matchStatusText,
-        lastEvent: animType,
-        animId: Date.now()
-      });
+    runs = 0; wickets = 0; legalBalls = 0;
+    strikerRuns = 0; strikerBalls = 0;
+    nonStrikerRuns = 0; nonStrikerBalls = 0;
+    bowlerRuns = 0; bowlerWickets = 0; bowlerBalls = 0;
+    currentOverBalls = [];
+    document.getElementById('in-striker').value = "Striker";
+    document.getElementById('in-non-striker').value = "Non-Striker";
+    document.getElementById('in-bowler').value = "Bowler Name";
+    matchStatusText = "";
+  }
+
+  if (innings === "2") {
+    const target = parseInt(document.getElementById('in-target').value) || 0;
+    const chasingTeam = document.getElementById('in-team-a').value;
+    const defendingTeam = document.getElementById('in-team-b').value;
+
+    if (runs >= target && target > 0) {
+      const wicketsLeft = 10 - wickets;
+      matchStatusText = `🏆 ${chasingTeam} WON BY ${wicketsLeft} WICKETS!`;
+    } else if ((legalBalls >= totalMatchBalls || wickets >= 10) && runs < target - 1) {
+      const margin = (target - 1) - runs;
+      matchStatusText = `🏆 ${defendingTeam} WON BY ${margin} RUNS!`;
+    } else if ((legalBalls >= totalMatchBalls || wickets >= 10) && runs === target - 1) {
+      matchStatusText = `🤝 MATCH TIED!`;
+    } else {
+      matchStatusText = "";
     }
+  }
+}
 
-    function onBowlerChange() {
-      bowlerRuns = 0; bowlerWickets = 0; bowlerBalls = 0;
-      currentOverBalls = [];
-      sync();
-    }
+function sync(animType = "") {
+  let matchKey = activeMatchId;
+  if (!matchKey || matchKey === "undefined" || matchKey === "null") {
+    matchKey = 'match_1';
+    activeMatchId = 'match_1';
+  }
 
-    function swapStrike() {
+  db = firebase.database().ref('matches/' + matchKey);
+  checkInningsAutoSwitch();
+
+  const overNum = Math.floor(legalBalls / 6);
+  const ballNum = legalBalls % 6;
+
+  const bowlerOverNum = Math.floor(bowlerBalls / 6);
+  const bowlerBallNum = bowlerBalls % 6;
+
+  const maxOvers = parseInt(document.getElementById('in-max-overs').value) || 20;
+  const innings = document.getElementById('in-innings').value;
+  const target = parseInt(document.getElementById('in-target').value) || 0;
+
+  const totalBallsInMatch = maxOvers * 6;
+  const remainingBalls = Math.max(0, totalBallsInMatch - legalBalls);
+  const needRuns = Math.max(0, target - runs);
+  const rrr = remainingBalls > 0 ? ((needRuns / remainingBalls) * 6).toFixed(2) : "0.00";
+
+  if (animType !== "") {
+    triggerAnimation(animType);
+  }
+
+  db.set({
+    teamA: document.getElementById('in-team-a').value || 'TEAM A',
+    teamB: document.getElementById('in-team-b').value || 'TEAM B',
+    strikerName: document.getElementById('in-striker').value || 'Striker',
+    strikerRuns: strikerRuns,
+    strikerBalls: strikerBalls,
+    nonStrikerName: document.getElementById('in-non-striker').value || 'Non-Striker',
+    nonStrikerRuns: nonStrikerRuns,
+    nonStrikerBalls: nonStrikerBalls,
+    bowler: document.getElementById('in-bowler').value || 'Bowler Name',
+    bowlerRuns: bowlerRuns,
+    bowlerWickets: bowlerWickets,
+    bowlerOvers: `${bowlerOverNum}.${bowlerBallNum}`,
+    thisOver: currentOverBalls.length > 0 ? currentOverBalls.join(' | ') : '-',
+    runs: runs,
+    wickets: wickets,
+    overs: `${overNum}.${ballNum}`,
+    maxOvers: maxOvers,
+    innings: innings,
+    target: target,
+    needRuns: needRuns,
+    remainingBalls: remainingBalls,
+    rrr: rrr,
+    matchStatusText: matchStatusText,
+    lastEvent: animType,
+    animId: Date.now()
+  });
+}
+
+function onBowlerChange() {
+  saveState();
+  bowlerRuns = 0; bowlerWickets = 0; bowlerBalls = 0;
+  currentOverBalls = [];
+  sync();
+}
+
+function swapStrike() {
+  saveState();
+  const sName = document.getElementById('in-striker').value;
+  const nsName = document.getElementById('in-non-striker').value;
+  document.getElementById('in-striker').value = nsName;
+  document.getElementById('in-non-striker').value = sName;
+
+  const tempR = strikerRuns; const tempB = strikerBalls;
+  strikerRuns = nonStrikerRuns; strikerBalls = nonStrikerBalls;
+  nonStrikerRuns = tempR; nonStrikerBalls = tempB;
+  sync();
+}
+
+function addBall(r, label, animTag = "") {
+  saveState();
+  runs += r; legalBalls++;
+  strikerRuns += r; strikerBalls++;
+  bowlerRuns += r; bowlerBalls++;
+  currentOverBalls.push(label);
+
+  if (r % 2 !== 0) {
+    const sName = document.getElementById('in-striker').value;
+    const nsName = document.getElementById('in-non-striker').value;
+    document.getElementById('in-striker').value = nsName;
+    document.getElementById('in-non-striker').value = sName;
+    const tempR = strikerRuns; const tempB = strikerBalls;
+    strikerRuns = nonStrikerRuns; strikerBalls = nonStrikerBalls;
+    nonStrikerRuns = tempR; nonStrikerBalls = tempB;
+  }
+
+  if (legalBalls % 6 === 0) {
+    const sName = document.getElementById('in-striker').value;
+    const nsName = document.getElementById('in-non-striker').value;
+    document.getElementById('in-striker').value = nsName;
+    document.getElementById('in-non-striker').value = sName;
+    const tempR = strikerRuns; const tempB = strikerBalls;
+    strikerRuns = nonStrikerRuns; strikerBalls = nonStrikerBalls;
+    nonStrikerRuns = tempR; nonStrikerBalls = tempB;
+    setTimeout(() => { currentOverBalls = []; sync(); }, 1500);
+  }
+  sync(animTag);
+}
+
+function addWicket() {
+  saveState();
+  if (wickets < 10) {
+    wickets++; legalBalls++;
+    strikerBalls++; bowlerWickets++; bowlerBalls++;
+    currentOverBalls.push('W');
+
+    strikerRuns = 0; strikerBalls = 0;
+    document.getElementById('in-striker').value = "New Batsman";
+
+    if (legalBalls % 6 === 0) {
       const sName = document.getElementById('in-striker').value;
       const nsName = document.getElementById('in-non-striker').value;
       document.getElementById('in-striker').value = nsName;
       document.getElementById('in-non-striker').value = sName;
-
       const tempR = strikerRuns; const tempB = strikerBalls;
       strikerRuns = nonStrikerRuns; strikerBalls = nonStrikerBalls;
       nonStrikerRuns = tempR; nonStrikerBalls = tempB;
-      sync();
+      setTimeout(() => { currentOverBalls = []; sync(); }, 1500);
     }
+    sync('WICKET');
+  }
+}
 
-    function addBall(r, label, animTag = "") {
-      runs += r; legalBalls++;
-      strikerRuns += r; strikerBalls++;
-      bowlerRuns += r; bowlerBalls++;
-      currentOverBalls.push(label);
+function addExtra(type, label) {
+  saveState();
+  runs += 1; bowlerRuns += 1;
+  currentOverBalls.push(label);
+  sync();
+}
 
-      if (r % 2 !== 0) swapStrike();
-      if (legalBalls % 6 === 0) {
-        swapStrike();
-        setTimeout(() => { currentOverBalls = []; sync(); }, 1500);
-      }
-      sync(animTag);
+function manualAdjust(type, amount) {
+  saveState();
+  if (type === 'runs') {
+    runs = Math.max(0, runs + amount);
+    strikerRuns = Math.max(0, strikerRuns + amount);
+    bowlerRuns = Math.max(0, bowlerRuns + amount);
+  }
+  if (type === 'wickets') {
+    wickets = Math.min(10, Math.max(0, wickets + amount));
+    bowlerWickets = Math.max(0, bowlerWickets + amount);
+  }
+  if (type === 'balls') {
+    legalBalls = Math.max(0, legalBalls + amount);
+    strikerBalls = Math.max(0, strikerBalls + amount);
+    bowlerBalls = Math.max(0, bowlerBalls + amount);
+    if (currentOverBalls.length > 0 && amount < 0) {
+      currentOverBalls.pop();
     }
-
-    function addWicket() {
-      if (wickets < 10) {
-        wickets++; legalBalls++;
-        strikerBalls++; bowlerWickets++; bowlerBalls++;
-        currentOverBalls.push('W');
-
-        strikerRuns = 0; strikerBalls = 0;
-        document.getElementById('in-striker').value = "New Batsman";
-
-        if (legalBalls % 6 === 0) {
-          swapStrike();
-          setTimeout(() => { currentOverBalls = []; sync(); }, 1500);
-        }
-        sync('WICKET');
-      }
-    }
-
-    function addExtra(type, label) {
-      runs += 1; bowlerRuns += 1;
-      currentOverBalls.push(label);
-      sync();
-    }
-
-    function manualAdjust(type, amount) {
-      if (type === 'runs') runs = Math.max(0, runs + amount);
-      if (type === 'wickets') wickets = Math.min(10, Math.max(0, wickets + amount));
-      if (type === 'balls') legalBalls = Math.max(0, legalBalls + amount);
-      sync();
-    }
-  </script>
+  }
+  sync();
+}
+</script>
 </body>
 </html>

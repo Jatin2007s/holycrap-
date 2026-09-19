@@ -15,7 +15,6 @@
   --accent-red: #c62828;
   --accent-cyan: #00e5ff;
   --accent-gold: #ffd700;
-  --accent-purple: #7b1fa2;
   --text-main: #ffffff;
   --text-muted: #94a3b8;
 }
@@ -123,8 +122,9 @@ button:active { transform: scale(0.98); }
 /* Custom Banners */
 #target-banner { display: none; justify-content: space-between; background: #1a237e; padding: 10px; border-radius: 6px; }
 #status-banner { display: none; text-align: center; font-weight: bold; background: #f57f17; color: #000; padding: 8px; border-radius: 6px; }
+#toss-banner { text-align: center; font-weight: bold; background: #00838f; color: #fff; padding: 6px; border-radius: 6px; margin-top: 8px; font-size: 0.85rem; }
 
-/* Full-Screen Trigger Animation Overlay (OBS / Local Preview) */
+/* Full-Screen Trigger Animation Overlay */
 #animOverlay {
   position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
   background: rgba(0, 0, 0, 0.85); display: none; align-items: center;
@@ -251,6 +251,7 @@ button:active { transform: scale(0.98); }
 <div class="sub-score" id="out-non-striker">Non-Striker 0 (0)</div>
 <div class="sub-score" id="out-bowler">Bowler 0-0 (0.0)</div>
 <div class="sub-score" id="out-this-over">THIS OVER: [ - ]</div>
+<div id="toss-banner">TOSS: Pending...</div>
 </div>
 
 <!-- TARGET BANNER (2nd Innings) -->
@@ -260,7 +261,7 @@ button:active { transform: scale(0.98); }
 <span>RRR: <strong id="out-rrr">0.00</strong></span>
 </div>
 
-<!-- MATCH SETUP -->
+<!-- MATCH & TOSS SETUP -->
 <div class="card grid-2">
 <div>
 <label>Team A (Batting)</label>
@@ -284,6 +285,21 @@ button:active { transform: scale(0.98); }
 <div>
 <label>Target Runs (Innings 2)</label>
 <input type="number" id="in-target" value="0" onchange="sync()">
+</div>
+<div>
+<label>Toss Winner</label>
+<select id="in-toss-winner" onchange="sync()">
+<option value="">-- Select Toss Winner --</option>
+<option value="Team A">Team A</option>
+<option value="Team B">Team B</option>
+</select>
+</div>
+<div style="grid-column: span 2;">
+<label>Toss Decision</label>
+<select id="in-toss-decision" onchange="sync()">
+<option value="Bat">Elected to Bat First</option>
+<option value="Bowl">Elected to Bowl First</option>
+</select>
 </div>
 </div>
 
@@ -315,7 +331,7 @@ button:active { transform: scale(0.98); }
 <button class="btn-orange" onclick="swapStrike()">SWAP STRIKE</button>
 </div>
 
-<!-- EXTRAS & UNDO ACTION CONTROLS -->
+<!-- EXTRAS & UNDO CONTROLS -->
 <div class="card grid-3">
 <button class="btn-dark" onclick="addExtra('wd', 'WD')">+1 WIDE</button>
 <button class="btn-dark" onclick="addExtra('nb', 'NB')">+1 NO BALL</button>
@@ -325,9 +341,7 @@ button:active { transform: scale(0.98); }
 <button class="btn-dark" onclick="manualAdjust('balls', -1)">-1 Ball (Manual)</button>
 </div>
 
-<!-- DEDICATED UNDO BUTTON -->
 <button class="btn-undo" style="width: 100%; margin-top: 10px;" onclick="undoLastAction()">↩️ UNDO LAST BALL / ACTION</button>
-
 <button class="btn-red" style="width: 100%; margin-top: 10px;" onclick="logout()">LOGOUT SESSION</button>
 
 </div>
@@ -353,8 +367,8 @@ let nonStrikerRuns = 0, nonStrikerBalls = 0;
 let bowlerRuns = 0, bowlerWickets = 0, bowlerBalls = 0;
 let currentOverBalls = [];
 let matchStatusText = "";
+let isMatchOver = false;
 
-// State Stack for Undo Functionality
 let historyStack = [];
 
 function saveState() {
@@ -366,10 +380,12 @@ function saveState() {
     currentOverBalls: [...currentOverBalls],
     strikerName: document.getElementById('in-striker').value,
     nonStrikerName: document.getElementById('in-non-striker').value,
-    bowlerName: document.getElementById('in-bowler').value
+    bowlerName: document.getElementById('in-bowler').value,
+    isMatchOver: isMatchOver,
+    matchStatusText: matchStatusText
   };
   historyStack.push(JSON.stringify(currentState));
-  if (historyStack.length > 20) historyStack.shift(); // Keep last 20 states
+  if (historyStack.length > 20) historyStack.shift();
 }
 
 function undoLastAction() {
@@ -389,6 +405,8 @@ function undoLastAction() {
   bowlerWickets = lastState.bowlerWickets;
   bowlerBalls = lastState.bowlerBalls;
   currentOverBalls = lastState.currentOverBalls;
+  isMatchOver = lastState.isMatchOver;
+  matchStatusText = lastState.matchStatusText;
 
   document.getElementById('in-striker').value = lastState.strikerName;
   document.getElementById('in-non-striker').value = lastState.nonStrikerName;
@@ -477,7 +495,6 @@ function logout() {
 function triggerAnimation(type) {
   const overlay = document.getElementById('animOverlay');
   const text = document.getElementById('animText');
-  
   if (!overlay || !text) return;
 
   if (type === 'SIX') {
@@ -520,6 +537,10 @@ function initMatchDatabase(matchId) {
       document.getElementById('wickets').innerText = data.wickets !== undefined ? data.wickets : 0;
       document.getElementById('overs').innerText = data.overs || "0.0";
       document.getElementById('out-max-overs').innerText = data.maxOvers || 20;
+
+      if (data.tossText) {
+        document.getElementById('toss-banner').innerText = `TOSS: ${data.tossText}`;
+      }
 
       const targetBanner = document.getElementById('target-banner');
       if (data.innings === "2") {
@@ -572,6 +593,7 @@ function checkInningsAutoSwitch() {
     document.getElementById('in-non-striker').value = "Non-Striker";
     document.getElementById('in-bowler').value = "Bowler Name";
     matchStatusText = "";
+    isMatchOver = false;
   }
 
   if (innings === "2") {
@@ -582,13 +604,17 @@ function checkInningsAutoSwitch() {
     if (runs >= target && target > 0) {
       const wicketsLeft = 10 - wickets;
       matchStatusText = `🏆 ${chasingTeam} WON BY ${wicketsLeft} WICKETS!`;
+      isMatchOver = true;
     } else if ((legalBalls >= totalMatchBalls || wickets >= 10) && runs < target - 1) {
       const margin = (target - 1) - runs;
       matchStatusText = `🏆 ${defendingTeam} WON BY ${margin} RUNS!`;
+      isMatchOver = true;
     } else if ((legalBalls >= totalMatchBalls || wickets >= 10) && runs === target - 1) {
       matchStatusText = `🤝 MATCH TIED!`;
+      isMatchOver = true;
     } else {
       matchStatusText = "";
+      isMatchOver = false;
     }
   }
 }
@@ -618,6 +644,11 @@ function sync(animType = "") {
   const needRuns = Math.max(0, target - runs);
   const rrr = remainingBalls > 0 ? ((needRuns / remainingBalls) * 6).toFixed(2) : "0.00";
 
+  const tossWinnerChoice = document.getElementById('in-toss-winner').value;
+  const tossWinner = tossWinnerChoice === "Team A" ? document.getElementById('in-team-a').value : (tossWinnerChoice === "Team B" ? document.getElementById('in-team-b').value : "");
+  const tossDecision = document.getElementById('in-toss-decision').value;
+  const tossText = tossWinner ? `${tossWinner} won the toss & elected to ${tossDecision}` : "";
+
   if (animType !== "") {
     triggerAnimation(animType);
   }
@@ -645,7 +676,9 @@ function sync(animType = "") {
     needRuns: needRuns,
     remainingBalls: remainingBalls,
     rrr: rrr,
+    tossText: tossText,
     matchStatusText: matchStatusText,
+    isMatchOver: isMatchOver,
     lastEvent: animType,
     animId: Date.now()
   });

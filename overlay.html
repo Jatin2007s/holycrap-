@@ -37,7 +37,7 @@
       align-items: center;
       justify-content: center;
       z-index: 9999;
-      background: rgba(0, 0, 0, 0.45);
+      background: rgba(0, 0, 0, 0.5);
       backdrop-filter: blur(4px);
     }
 
@@ -61,6 +61,7 @@
     .pop-six { background: #0a0e17; color: #00e5ff; border: 8px solid #00e5ff; text-shadow: 0 0 35px #00e5ff; }
     .pop-four { background: #0a0e17; color: #facc15; border: 8px solid #facc15; text-shadow: 0 0 35px #facc15; }
     .pop-wicket { background: #0a0e17; color: #ff1744; border: 8px solid #ff1744; text-shadow: 0 0 35px #ff1744; }
+    .pop-toss { background: #0a0e17; color: #ffd700; border: 8px solid #ffd700; font-size: 3rem; text-align: center; text-shadow: 0 0 30px #ffd700; }
 
     /* MAIN OVERLAY CARD */
     .overlay-card {
@@ -212,7 +213,7 @@
 
     let lastProcessedAnimId = 0;
 
-    function triggerFullScreenEvent(eventType) {
+    function triggerFullScreenEvent(eventType, tossText = "") {
       const overlay = document.getElementById('popOverlay');
       const box = document.getElementById('popBox');
 
@@ -227,6 +228,12 @@
       } else if (eventType === 'WICKET') {
         box.innerText = '☝️ WICKET! ☝️';
         box.className = 'pop-card pop-wicket';
+      } else if (eventType === 'TOSS_FLIP') {
+        box.innerText = '🪙 FLIPPING TOSS COIN...';
+        box.className = 'pop-card pop-toss';
+      } else if (eventType === 'TOSS_RESULT') {
+        box.innerText = `🪙 ${tossText.toUpperCase()}`;
+        box.className = 'pop-card pop-toss';
       } else {
         return;
       }
@@ -234,7 +241,7 @@
       overlay.style.display = 'flex';
       setTimeout(() => {
         overlay.style.display = 'none';
-      }, 2500);
+      }, eventType.includes('TOSS') ? 3500 : 2500);
     }
 
     firebase.database().ref('matches/' + matchId).on('value', (snapshot) => {
@@ -295,7 +302,7 @@
       document.getElementById('thisOver').innerText = data.thisOver || '-';
       
       const badge = document.getElementById('animBadge');
-      if (data.lastEvent) {
+      if (data.lastEvent && !data.lastEvent.includes('TOSS')) {
         badge.innerHTML = `<span class="event-anim">${data.lastEvent}</span>`;
       } else {
         badge.innerHTML = '';
@@ -304,7 +311,7 @@
       // Process Pop-up Animations
       if (data.lastEvent && data.animId && data.animId !== lastProcessedAnimId) {
         lastProcessedAnimId = data.animId;
-        triggerFullScreenEvent(data.lastEvent);
+        triggerFullScreenEvent(data.lastEvent, data.tossText);
       }
     });
   </script>

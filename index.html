@@ -58,7 +58,6 @@ body { background-color: var(--bg-dark); color: var(--text-main); padding: 15px;
 .coin-heads { background: radial-gradient(circle, #ffd700, #ff8c00); }
 .coin-tails { background: radial-gradient(circle, #e0e0e0, #757575); transform: rotateY(180deg); }
 
-/* Embedded Watermark */
 .card-bg-logo {
   position: absolute; right: -30px; bottom: -20px; height: 130%; width: auto;
   opacity: 0.10; pointer-events: none; z-index: 0;
@@ -66,11 +65,9 @@ body { background-color: var(--bg-dark); color: var(--text-main); padding: 15px;
 }
 .card-content { position: relative; z-index: 1; }
 
-/* Branding Header */
 .brand-header { text-align: center; margin-bottom: 20px; }
 .brand-header svg { height: 50px; width: auto; filter: drop-shadow(0 2px 8px rgba(0,0,0,0.6)); }
 
-/* Payment Box */
 .payment-box {
   margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--border-color);
   display: flex; flex-direction: column; align-items: center; gap: 12px;
@@ -98,13 +95,11 @@ body { background-color: var(--bg-dark); color: var(--text-main); padding: 15px;
   padding: 8px; border-radius: 6px; border: 1px solid #c62828; margin-top: 5px;
 }
 
-/* Cards Layout */
 .card { background: var(--card-bg); padding: 15px; border-radius: 10px; border: 1px solid var(--border-color); }
 .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
 .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
 
-/* Score Banner */
 .score-banner { text-align: center; background: #182232; padding: 15px; border-radius: 8px; border: 1px solid rgba(0, 229, 255, 0.2); }
 .big-score { font-size: 2.5rem; font-weight: bold; color: #4caf50; }
 .sub-score { font-size: 1rem; color: var(--text-muted); margin-top: 5px; }
@@ -134,23 +129,9 @@ button:active { transform: scale(0.98); }
 #target-banner { display: none; justify-content: space-between; background: #1a237e; padding: 10px; border-radius: 6px; }
 #status-banner { display: none; text-align: center; font-weight: bold; background: #f57f17; color: #000; padding: 8px; border-radius: 6px; }
 #toss-banner { text-align: center; font-weight: bold; background: #00838f; color: #fff; padding: 6px; border-radius: 6px; margin-top: 8px; font-size: 0.85rem; }
-
-/* Trigger Animation Overlay */
-#animOverlay {
-  position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-  background: rgba(0, 0, 0, 0.85); display: none; align-items: center;
-  justify-content: center; z-index: 2000; pointer-events: none;
-}
-#animText {
-  font-size: 5rem; font-weight: 900; letter-spacing: 4px;
-  text-transform: uppercase; text-shadow: 0 0 30px currentColor;
-}
 </style>
 </head>
 <body>
-
-<!-- ANIMATION POPUP OVERLAY -->
-<div id="animOverlay"><div id="animText">SIX!</div></div>
 
 <!-- AUTOMATED END OF OVER BOWLER SELECTION MODAL -->
 <div id="nextBowlerModal">
@@ -403,8 +384,8 @@ button:active { transform: scale(0.98); }
 <button class="btn-gold" style="width:100%; margin-top:6px;" onclick="announceManOfTheMatch()">🏅 ANNOUNCE MAN OF THE MATCH</button>
 </div>
 <div>
-<label>Full Scorecard Broadcast</label>
-<button class="btn-purple" id="btnFullScorecard" style="width:100%; height:82px; font-size:1.05rem;" onclick="showFullScorecardOverlay()">📊 SHOW FULL SCORECARD OVERLAY (3s)</button>
+<label>Full Player Scorecard Overlay</label>
+<button class="btn-purple" id="btnFullScorecard" style="width:100%; height:82px; font-size:1.05rem;" onclick="showFullScorecardOverlay()">📊 SHOW FULL SCORECARD TABLE (5s)</button>
 </div>
 </div>
 
@@ -574,7 +555,7 @@ function confirmNewBatsman() {
 
 function showFullScorecardOverlay() {
   if (isMatchOver) {
-    alert("Match is finished! Showing Match Summary.");
+    alert("Match is finished!");
     return;
   }
   sync("FULL_SCORECARD");
@@ -781,36 +762,6 @@ function logout() {
   location.reload();
 }
 
-function triggerAnimation(type) {
-  const overlay = document.getElementById('animOverlay');
-  const text = document.getElementById('animText');
-  if (!overlay || !text) return;
-
-  if (type === 'SIX') {
-    text.innerText = '💥 SIX! 💥';
-    text.style.color = '#00e5ff';
-  } else if (type === 'FOUR') {
-    text.innerText = '⚡ FOUR! ⚡';
-    text.style.color = '#ffeb3b';
-  } else if (type === 'WICKET') {
-    text.innerText = '☝️ WICKET! ☝️';
-    text.style.color = '#ff1744';
-  } else if (type === 'MAN_OF_THE_MATCH') {
-    text.innerText = `🏅 MAN OF THE MATCH: ${manOfTheMatchName.toUpperCase()} 🏅`;
-    text.style.color = '#ffd700';
-  } else if (type === 'FULL_SCORECARD') {
-    text.innerText = '📊 FULL SCORECARD';
-    text.style.color = '#b388ff';
-  } else {
-    return;
-  }
-
-  overlay.style.display = 'flex';
-  setTimeout(() => {
-    overlay.style.display = 'none';
-  }, 2200);
-}
-
 function initMatchDatabase(matchId) {
   if (!matchId || matchId === "undefined" || matchId === "null" || matchId.trim() === "") {
     matchId = 'match_1';
@@ -972,10 +923,6 @@ function sync(animType = "") {
     playerStats[bName].overs = `${bowlerOverNum}.${bowlerBallNum}`;
   }
 
-  if (animType !== "") {
-    triggerAnimation(animType);
-  }
-
   db.set({
     teamA: document.getElementById('in-team-a').value || 'TEAM A',
     teamB: document.getElementById('in-team-b').value || 'TEAM B',
@@ -1038,7 +985,7 @@ function swapStrike() {
   sync();
 }
 
-function addBall(r, label, animTag = "") {
+function addBall(r, label) {
   if (isMatchOver) return;
   saveState();
   runs += r; legalBalls++;
@@ -1065,7 +1012,7 @@ function addBall(r, label, animTag = "") {
     strikerRuns = nonStrikerRuns; strikerBalls = nonStrikerBalls;
     nonStrikerRuns = tempR; nonStrikerBalls = tempB;
     
-    sync(animTag);
+    sync();
 
     setTimeout(() => { 
       currentOverBalls = []; 
@@ -1073,7 +1020,7 @@ function addBall(r, label, animTag = "") {
       openNextBowlerModal();
     }, 1500);
   } else {
-    sync(animTag);
+    sync();
   }
 }
 
@@ -1105,7 +1052,7 @@ function addWicket() {
       strikerRuns = nonStrikerRuns; strikerBalls = nonStrikerBalls;
       nonStrikerRuns = tempR; nonStrikerBalls = tempB;
 
-      sync('WICKET');
+      sync();
 
       setTimeout(() => {
         currentOverBalls = [];
@@ -1113,7 +1060,7 @@ function addWicket() {
         openNextBowlerModal();
       }, 1500);
     } else {
-      sync('WICKET');
+      sync();
       openNewBatsmanModal();
     }
   }

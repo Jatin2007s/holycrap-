@@ -24,12 +24,12 @@ body { background-color: var(--bg-dark); color: var(--text-main); padding: 15px;
 .container { max-width: 850px; margin: 0 auto; display: none; flex-direction: column; gap: 15px; }
 
 /* Modals */
-#paywallModal, #tossModal, #coinFlipModal, #tossWinnerModal {
+#paywallModal, #tossModal, #coinFlipModal, #tossWinnerModal, #nextBowlerModal, #newBatsmanModal {
   position: fixed; top: 0; left: 0; width: 100%; height: 100%;
   background: rgba(10, 14, 23, 0.95); display: flex; align-items: center;
   justify-content: center; z-index: 1000; overflow-y: auto; padding: 20px 0;
 }
-#tossModal, #coinFlipModal, #tossWinnerModal { display: none; z-index: 1500; background: rgba(0,0,0,0.85); }
+#tossModal, #coinFlipModal, #tossWinnerModal, #nextBowlerModal, #newBatsmanModal { display: none; z-index: 1500; background: rgba(0,0,0,0.85); }
 
 .modal-card {
   background: var(--card-bg); padding: 28px 24px; border-radius: 12px;
@@ -37,7 +37,7 @@ body { background-color: var(--bg-dark); color: var(--text-main); padding: 15px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7); margin: auto;
   position: relative; overflow: hidden;
 }
-.modal-card input {
+.modal-card select, .modal-card input {
   width: 100%; padding: 12px 16px; margin: 12px 0; border-radius: 6px;
   border: 1px solid var(--border-color); background: var(--input-bg); color: #fff; text-align: center;
   font-size: 1rem; outline: none; transition: border-color 0.3s;
@@ -151,6 +151,26 @@ button:active { transform: scale(0.98); }
 
 <!-- ANIMATION POPUP OVERLAY -->
 <div id="animOverlay"><div id="animText">SIX!</div></div>
+
+<!-- AUTOMATED END OF OVER BOWLER SELECTION MODAL -->
+<div id="nextBowlerModal">
+  <div class="modal-card">
+    <h3 style="color:#00e5ff; margin-bottom:8px;">🥎 END OF OVER!</h3>
+    <p style="font-size:0.9rem; color:#aaa; margin-bottom:15px;">Who will bowl the next over?</p>
+    <select id="modalBowlerSelect"></select>
+    <button class="btn-green" style="width:100%; margin-top:10px;" onclick="confirmNextBowler()">CONFIRM BOWLER</button>
+  </div>
+</div>
+
+<!-- AUTOMATED WICKET NEW BATSMAN SELECTION MODAL -->
+<div id="newBatsmanModal">
+  <div class="modal-card">
+    <h3 style="color:#ff1744; margin-bottom:8px;">☝️ WICKET FALL!</h3>
+    <p style="font-size:0.9rem; color:#aaa; margin-bottom:15px;">Select the new batsman coming out to bat:</p>
+    <select id="modalBatsmanSelect"></select>
+    <button class="btn-blue" style="width:100%; margin-top:10px;" onclick="confirmNewBatsman()">CONFIRM BATSMAN</button>
+  </div>
+</div>
 
 <!-- COIN FLIP ANIMATION MODAL -->
 <div id="coinFlipModal">
@@ -420,9 +440,10 @@ let tossCallResult = "";
 let manOfTheMatchName = "";
 let isMatchOver = false;
 
-// Dynamic player performance records
-let playerStats = {};
+// Last ball wicket sequence pending state flag
+let isPendingWicketBatsmanPicker = false;
 
+let playerStats = {};
 let historyStack = [];
 
 function updateTeamDropdowns() {
@@ -435,7 +456,6 @@ function updateTeamDropdowns() {
   const squadA = document.getElementById('in-team-a-squad').value.split(',').map(s => s.trim()).filter(Boolean);
   const squadB = document.getElementById('in-team-b-squad').value.split(',').map(s => s.trim()).filter(Boolean);
 
-  // Initialize player stats structure
   [...squadA, ...squadB].forEach(p => {
     if (!playerStats[p]) {
       playerStats[p] = { runs: 0, balls: 0, wickets: 0, overs: '0.0', conceded: 0, isOut: false };
@@ -476,6 +496,64 @@ function updateTeamDropdowns() {
   if (!strikerSel.value && squadA[0]) strikerSel.value = squadA[0];
   if (!nonStrikerSel.value && squadA[1]) nonStrikerSel.value = squadA[1];
   if (!bowlerSel.value && squadB[0]) bowlerSel.value = squadB[0];
+}
+
+// Open modal to select Next Bowler at End of Over
+function openNextBowlerModal() {
+  const squadB = document.getElementById('in-team-b-squad').value.split(',').map(s => s.trim()).filter(Boolean);
+  const currentBowler = document.getElementById('in-bowler').value;
+  const modalBowlerSelect = document.getElementById('modalBowlerSelect');
+
+  modalBowlerSelect.innerHTML = '';
+  squadB.forEach(p => {
+    if (p !== currentBowler) {
+      modalBowlerSelect.add(new Option(p, p));
+    }
+  });
+
+  document.getElementById('nextBowlerModal').style.display = 'flex';
+}
+
+function confirmNextBowler() {
+  const chosenBowler = document.getElementById('modalBowlerSelect').value;
+  if (chosenBowler) {
+    document.getElementById('in-bowler').value = chosenBowler;
+    onBowlerChange();
+  }
+  document.getElementById('nextBowlerModal').style.display = 'none';
+
+  // If a wicket fell on the last ball of the over, open batsman picker right after bowler selection
+  if (isPendingWicketBatsmanPicker) {
+    isPendingWicketBatsmanPicker = false;
+    openNewBatsmanModal();
+  }
+}
+
+// Open modal to select New Batsman when Wicket Falls
+function openNewBatsmanModal() {
+  const squadA = document.getElementById('in-team-a-squad').value.split(',').map(s => s.trim()).filter(Boolean);
+  const currentNonStriker = document.getElementById('in-non-striker').value;
+  const modalBatsmanSelect = document.getElementById('modalBatsmanSelect');
+
+  modalBatsmanSelect.innerHTML = '';
+  squadA.forEach(p => {
+    if (p !== currentNonStriker && (!playerStats[p] || !playerStats[p].isOut)) {
+      modalBatsmanSelect.add(new Option(p, p));
+    }
+  });
+
+  document.getElementById('newBatsmanModal').style.display = 'flex';
+}
+
+function confirmNewBatsman() {
+  const chosenBatsman = document.getElementById('modalBatsmanSelect').value;
+  if (chosenBatsman) {
+    document.getElementById('in-striker').value = chosenBatsman;
+    strikerRuns = 0;
+    strikerBalls = 0;
+  }
+  document.getElementById('newBatsmanModal').style.display = 'none';
+  sync();
 }
 
 function showFullScorecardOverlay() {
@@ -843,7 +921,6 @@ function sync(animType = "") {
   const needRuns = Math.max(0, target - runs);
   const rrr = remainingBalls > 0 ? ((needRuns / remainingBalls) * 6).toFixed(2) : "0.00";
 
-  // Update active player statistics tracking
   const sName = document.getElementById('in-striker').value;
   const bName = document.getElementById('in-bowler').value;
 
@@ -941,9 +1018,17 @@ function addBall(r, label, animTag = "") {
     const tempR = strikerRuns; const tempB = strikerBalls;
     strikerRuns = nonStrikerRuns; strikerBalls = nonStrikerBalls;
     nonStrikerRuns = tempR; nonStrikerBalls = tempB;
-    setTimeout(() => { currentOverBalls = []; sync(); }, 1500);
+    
+    sync(animTag);
+
+    setTimeout(() => { 
+      currentOverBalls = []; 
+      sync();
+      openNextBowlerModal();
+    }, 1500);
+  } else {
+    sync(animTag);
   }
-  sync(animTag);
 }
 
 function addWicket() {
@@ -956,19 +1041,30 @@ function addWicket() {
     const sName = document.getElementById('in-striker').value;
     if (sName && playerStats[sName]) playerStats[sName].isOut = true;
 
-    strikerRuns = 0; strikerBalls = 0;
+    const isLastBall = (legalBalls % 6 === 0);
 
-    if (legalBalls % 6 === 0) {
-      const sName = document.getElementById('in-striker').value;
+    if (isLastBall) {
+      // Last ball of over wicket: Ask Bowler first, then new Batsman
+      isPendingWicketBatsmanPicker = true;
+
       const nsName = document.getElementById('in-non-striker').value;
       document.getElementById('in-striker').value = nsName;
       document.getElementById('in-non-striker').value = sName;
       const tempR = strikerRuns; const tempB = strikerBalls;
       strikerRuns = nonStrikerRuns; strikerBalls = nonStrikerBalls;
       nonStrikerRuns = tempR; nonStrikerBalls = tempB;
-      setTimeout(() => { currentOverBalls = []; sync(); }, 1500);
+
+      sync('WICKET');
+
+      setTimeout(() => {
+        currentOverBalls = [];
+        sync();
+        openNextBowlerModal();
+      }, 1500);
+    } else {
+      sync('WICKET');
+      openNewBatsmanModal();
     }
-    sync('WICKET');
   }
 }
 
@@ -1003,3 +1099,4 @@ function manualAdjust(type, amount) {
 </script>
 </body>
 </html>
+                  

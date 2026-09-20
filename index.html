@@ -21,7 +21,7 @@
 
 * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
 body { background-color: var(--bg-dark); color: var(--text-main); padding: 15px; min-height: 100vh; }
-.container { max-width: 800px; margin: 0 auto; display: none; flex-direction: column; gap: 15px; }
+.container { max-width: 850px; margin: 0 auto; display: none; flex-direction: column; gap: 15px; }
 
 /* Modals */
 #paywallModal, #tossModal, #coinFlipModal, #tossWinnerModal {
@@ -110,10 +110,11 @@ body { background-color: var(--bg-dark); color: var(--text-main); padding: 15px;
 .sub-score { font-size: 1rem; color: var(--text-muted); margin-top: 5px; }
 
 label { font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 4px; }
-input, select {
+input, select, textarea {
   width: 100%; padding: 8px 10px; border-radius: 6px; border: 1px solid var(--border-color);
   background: var(--input-bg); color: #fff; font-size: 0.9rem; outline: none;
 }
+textarea { resize: vertical; min-height: 60px; font-family: inherit; }
 button {
   padding: 12px; border: none; border-radius: 6px; font-weight: bold;
   color: #fff; cursor: pointer; transition: 0.2s opacity, 0.2s transform;
@@ -295,12 +296,12 @@ button:active { transform: scale(0.98); }
 <!-- MATCH & TOSS SETUP -->
 <div class="card grid-2">
 <div>
-<label>Team A (Batting)</label>
-<input type="text" id="in-team-a" value="TEAM A" onchange="sync()">
+<label>Team A Name (Batting)</label>
+<input type="text" id="in-team-a" value="TEAM A" onchange="updateTeamDropdowns(); sync();">
 </div>
 <div>
-<label>Team B (Bowling)</label>
-<input type="text" id="in-team-b" value="TEAM B" onchange="sync()">
+<label>Team B Name (Bowling)</label>
+<input type="text" id="in-team-b" value="TEAM B" onchange="updateTeamDropdowns(); sync();">
 </div>
 <div>
 <label>Innings</label>
@@ -323,19 +324,31 @@ button:active { transform: scale(0.98); }
 </div>
 </div>
 
+<!-- FULL SQUAD PLAYING XI SETUP -->
+<div class="card grid-2">
+<div>
+<label id="lbl-team-a-squad">Team A Playing XI (Comma separated)</label>
+<textarea id="in-team-a-squad" placeholder="Player 1, Player 2, Player 3..." onchange="updateTeamDropdowns(); sync();">Player 1, Player 2, Player 3, Player 4, Player 5, Player 6, Player 7, Player 8, Player 9, Player 10, Player 11</textarea>
+</div>
+<div>
+<label id="lbl-team-b-squad">Team B Playing XI (Comma separated)</label>
+<textarea id="in-team-b-squad" placeholder="Player 1, Player 2, Player 3..." onchange="updateTeamDropdowns(); sync();">Player A, Player B, Player C, Player D, Player E, Player F, Player G, Player H, Player I, Player J, Player K</textarea>
+</div>
+</div>
+
 <!-- PLAYERS INNINGS SETUP -->
 <div class="card grid-3">
 <div>
 <label>Striker Name</label>
-<input type="text" id="in-striker" value="Striker" onchange="sync()">
+<select id="in-striker" onchange="sync()"></select>
 </div>
 <div>
 <label>Non-Striker Name</label>
-<input type="text" id="in-non-striker" value="Non-Striker" onchange="sync()">
+<select id="in-non-striker" onchange="sync()"></select>
 </div>
 <div>
 <label>Current Bowler</label>
-<input type="text" id="in-bowler" value="Bowler" onchange="onBowlerChange()">
+<select id="in-bowler" onchange="onBowlerChange()"></select>
 </div>
 </div>
 
@@ -359,6 +372,18 @@ button:active { transform: scale(0.98); }
 <button class="btn-dark" onclick="manualAdjust('runs', 1)">+1 Run (Manual)</button>
 <button class="btn-dark" onclick="manualAdjust('runs', -1)">-1 Run (Manual)</button>
 <button class="btn-dark" onclick="manualAdjust('balls', -1)">-1 Ball (Manual)</button>
+</div>
+
+<!-- MAN OF THE MATCH SETUP -->
+<div class="card grid-2">
+<div>
+<label>Select Man of the Match</label>
+<select id="in-mom-select"></select>
+</div>
+<div>
+<label>Action</label>
+<button class="btn-gold" style="width:100%; margin-top:2px;" onclick="announceManOfTheMatch()">🏅 ANNOUNCE MAN OF THE MATCH</button>
+</div>
 </div>
 
 <button class="btn-undo" style="width: 100%; margin-top: 10px;" onclick="undoLastAction()">↩️ UNDO LAST BALL / ACTION</button>
@@ -390,9 +415,57 @@ let matchStatusText = "";
 let tossDecisionText = "";
 let tossWinnerName = "";
 let tossCallResult = "";
+let manOfTheMatchName = "";
 let isMatchOver = false;
 
 let historyStack = [];
+
+// Parse Squad Inputs and populate Dropdowns
+function updateTeamDropdowns() {
+  const teamA = document.getElementById('in-team-a').value || "Team A";
+  const teamB = document.getElementById('in-team-b').value || "Team B";
+
+  document.getElementById('lbl-team-a-squad').innerText = `${teamA} Playing XI (Comma separated)`;
+  document.getElementById('lbl-team-b-squad').innerText = `${teamB} Playing XI (Comma separated)`;
+
+  const squadA = document.getElementById('in-team-a-squad').value.split(',').map(s => s.trim()).filter(Boolean);
+  const squadB = document.getElementById('in-team-b-squad').value.split(',').map(s => s.trim()).filter(Boolean);
+
+  const strikerSel = document.getElementById('in-striker');
+  const nonStrikerSel = document.getElementById('in-non-striker');
+  const bowlerSel = document.getElementById('in-bowler');
+  const momSel = document.getElementById('in-mom-select');
+
+  const currStriker = strikerSel.value;
+  const currNonStriker = nonStrikerSel.value;
+  const currBowler = bowlerSel.value;
+  const currMom = momSel.value;
+
+  strikerSel.innerHTML = '';
+  nonStrikerSel.innerHTML = '';
+  bowlerSel.innerHTML = '';
+  momSel.innerHTML = '<option value="">-- Select Player --</option>';
+
+  squadA.forEach(player => {
+    strikerSel.add(new Option(player, player));
+    nonStrikerSel.add(new Option(player, player));
+    momSel.add(new Option(`${player} (${teamA})`, player));
+  });
+
+  squadB.forEach(player => {
+    bowlerSel.add(new Option(player, player));
+    momSel.add(new Option(`${player} (${teamB})`, player));
+  });
+
+  if (currStriker) strikerSel.value = currStriker;
+  if (currNonStriker) nonStrikerSel.value = currNonStriker;
+  if (currBowler) bowlerSel.value = currBowler;
+  if (currMom) momSel.value = currMom;
+
+  if (!strikerSel.value && squadA[0]) strikerSel.value = squadA[0];
+  if (!nonStrikerSel.value && squadA[1]) nonStrikerSel.value = squadA[1];
+  if (!bowlerSel.value && squadB[0]) bowlerSel.value = squadB[0];
+}
 
 // Interactive Coin Flip Logic
 function startInteractiveToss() {
@@ -450,9 +523,17 @@ function setTossDecision(decision) {
   if ((tossWinnerName === teamB && decision === "BAT") || (tossWinnerName === teamA && decision === "BOWL")) {
     document.getElementById('in-team-a').value = teamB;
     document.getElementById('in-team-b').value = teamA;
+    updateTeamDropdowns();
   }
 
   sync("TOSS_RESULT");
+}
+
+function announceManOfTheMatch() {
+  const selectedPlayer = document.getElementById('in-mom-select').value;
+  if (!selectedPlayer) return alert("Please select a player for Man of the Match!");
+  manOfTheMatchName = selectedPlayer;
+  sync("MAN_OF_THE_MATCH");
 }
 
 function saveState() {
@@ -469,7 +550,8 @@ function saveState() {
     teamB: document.getElementById('in-team-b').value,
     isMatchOver: isMatchOver,
     matchStatusText: matchStatusText,
-    tossDecisionText: tossDecisionText
+    tossDecisionText: tossDecisionText,
+    manOfTheMatchName: manOfTheMatchName
   };
   historyStack.push(JSON.stringify(currentState));
   if (historyStack.length > 20) historyStack.shift();
@@ -495,12 +577,15 @@ function undoLastAction() {
   isMatchOver = lastState.isMatchOver;
   matchStatusText = lastState.matchStatusText;
   tossDecisionText = lastState.tossDecisionText;
+  manOfTheMatchName = lastState.manOfTheMatchName;
+
+  document.getElementById('in-team-a').value = lastState.teamA;
+  document.getElementById('in-team-b').value = lastState.teamB;
+  updateTeamDropdowns();
 
   document.getElementById('in-striker').value = lastState.strikerName;
   document.getElementById('in-non-striker').value = lastState.nonStrikerName;
   document.getElementById('in-bowler').value = lastState.bowlerName;
-  document.getElementById('in-team-a').value = lastState.teamA;
-  document.getElementById('in-team-b').value = lastState.teamB;
 
   sync();
 }
@@ -596,6 +681,9 @@ function triggerAnimation(type) {
   } else if (type === 'WICKET') {
     text.innerText = '☝️ WICKET! ☝️';
     text.style.color = '#ff1744';
+  } else if (type === 'MAN_OF_THE_MATCH') {
+    text.innerText = `🏅 MAN OF THE MATCH: ${manOfTheMatchName.toUpperCase()} 🏅`;
+    text.style.color = '#ffd700';
   } else {
     return;
   }
@@ -603,7 +691,7 @@ function triggerAnimation(type) {
   overlay.style.display = 'flex';
   setTimeout(() => {
     overlay.style.display = 'none';
-  }, 2200);
+  }, 2500);
 }
 
 function initMatchDatabase(matchId) {
@@ -612,6 +700,8 @@ function initMatchDatabase(matchId) {
   }
   activeMatchId = matchId;
   db = firebase.database().ref('matches/' + activeMatchId);
+
+  updateTeamDropdowns();
 
   db.on('value', (snapshot) => {
     const data = snapshot.val();
@@ -655,7 +745,9 @@ function initMatchDatabase(matchId) {
   sync();
 }
 
-window.onload = checkSavedLicense;
+window.onload = () => {
+  checkSavedLicense();
+};
 
 function checkInningsAutoSwitch() {
   const maxOvers = parseInt(document.getElementById('in-max-overs').value) || 20;
@@ -673,15 +765,13 @@ function checkInningsAutoSwitch() {
     const teamB = document.getElementById('in-team-b').value;
     document.getElementById('in-team-a').value = teamB;
     document.getElementById('in-team-b').value = teamA;
+    updateTeamDropdowns();
 
     runs = 0; wickets = 0; legalBalls = 0;
     strikerRuns = 0; strikerBalls = 0;
     nonStrikerRuns = 0; nonStrikerBalls = 0;
     bowlerRuns = 0; bowlerWickets = 0; bowlerBalls = 0;
     currentOverBalls = [];
-    document.getElementById('in-striker').value = "Striker";
-    document.getElementById('in-non-striker').value = "Non-Striker";
-    document.getElementById('in-bowler').value = "Bowler Name";
     matchStatusText = "";
     isMatchOver = false;
   }
@@ -741,6 +831,8 @@ function sync(animType = "") {
   db.set({
     teamA: document.getElementById('in-team-a').value || 'TEAM A',
     teamB: document.getElementById('in-team-b').value || 'TEAM B',
+    squadA: document.getElementById('in-team-a-squad').value,
+    squadB: document.getElementById('in-team-b-squad').value,
     strikerName: document.getElementById('in-striker').value || 'Striker',
     strikerRuns: strikerRuns,
     strikerBalls: strikerBalls,
@@ -763,6 +855,7 @@ function sync(animType = "") {
     rrr: rrr,
     tossText: tossDecisionText,
     matchStatusText: matchStatusText,
+    manOfTheMatch: manOfTheMatchName,
     isMatchOver: isMatchOver,
     lastEvent: animType,
     animId: Date.now()
@@ -827,7 +920,6 @@ function addWicket() {
     currentOverBalls.push('W');
 
     strikerRuns = 0; strikerBalls = 0;
-    document.getElementById('in-striker').value = "New Batsman";
 
     if (legalBalls % 6 === 0) {
       const sName = document.getElementById('in-striker').value;

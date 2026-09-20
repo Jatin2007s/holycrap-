@@ -126,6 +126,7 @@ button:active { transform: scale(0.98); }
 .btn-blue { background: linear-gradient(135deg, #1565c0, #0d47a1); }
 .btn-red { background: linear-gradient(135deg, #ff1744, #d50000); }
 .btn-gold { background: linear-gradient(135deg, #ffd700, #ff8c00); color: #000; font-weight: 900; }
+.btn-purple { background: linear-gradient(135deg, #7b1fa2, #4a148c); color: #fff; font-weight: bold; }
 .btn-dark { background: #1a2332; color: #fff; border: 1px solid var(--border-color); }
 .btn-orange { background: #e65100; }
 .btn-undo { background: linear-gradient(135deg, #d81b60, #8e24aa); color: #fff; font-size: 1rem; box-shadow: 0 4px 12px rgba(216, 27, 96, 0.4); }
@@ -374,15 +375,16 @@ button:active { transform: scale(0.98); }
 <button class="btn-dark" onclick="manualAdjust('balls', -1)">-1 Ball (Manual)</button>
 </div>
 
-<!-- MAN OF THE MATCH SETUP -->
+<!-- BROADCAST OVERLAY CONTROLS -->
 <div class="card grid-2">
 <div>
 <label>Select Man of the Match</label>
 <select id="in-mom-select"></select>
+<button class="btn-gold" style="width:100%; margin-top:6px;" onclick="announceManOfTheMatch()">🏅 ANNOUNCE MAN OF THE MATCH</button>
 </div>
 <div>
-<label>Action</label>
-<button class="btn-gold" style="width:100%; margin-top:2px;" onclick="announceManOfTheMatch()">🏅 ANNOUNCE MAN OF THE MATCH</button>
+<label>Full Scorecard Broadcast</label>
+<button class="btn-purple" style="width:100%; height:82px; font-size:1.05rem;" onclick="showFullScorecardOverlay()">📊 SHOW FULL SCORECARD OVERLAY (3s)</button>
 </div>
 </div>
 
@@ -418,9 +420,11 @@ let tossCallResult = "";
 let manOfTheMatchName = "";
 let isMatchOver = false;
 
+// Dynamic player performance records
+let playerStats = {};
+
 let historyStack = [];
 
-// Parse Squad Inputs and populate Dropdowns
 function updateTeamDropdowns() {
   const teamA = document.getElementById('in-team-a').value || "Team A";
   const teamB = document.getElementById('in-team-b').value || "Team B";
@@ -430,6 +434,13 @@ function updateTeamDropdowns() {
 
   const squadA = document.getElementById('in-team-a-squad').value.split(',').map(s => s.trim()).filter(Boolean);
   const squadB = document.getElementById('in-team-b-squad').value.split(',').map(s => s.trim()).filter(Boolean);
+
+  // Initialize player stats structure
+  [...squadA, ...squadB].forEach(p => {
+    if (!playerStats[p]) {
+      playerStats[p] = { runs: 0, balls: 0, wickets: 0, overs: '0.0', conceded: 0, isOut: false };
+    }
+  });
 
   const strikerSel = document.getElementById('in-striker');
   const nonStrikerSel = document.getElementById('in-non-striker');
@@ -467,7 +478,10 @@ function updateTeamDropdowns() {
   if (!bowlerSel.value && squadB[0]) bowlerSel.value = squadB[0];
 }
 
-// Interactive Coin Flip Logic
+function showFullScorecardOverlay() {
+  sync("FULL_SCORECARD");
+}
+
 function startInteractiveToss() {
   saveState();
   const coinModal = document.getElementById('coinFlipModal');
@@ -551,7 +565,8 @@ function saveState() {
     isMatchOver: isMatchOver,
     matchStatusText: matchStatusText,
     tossDecisionText: tossDecisionText,
-    manOfTheMatchName: manOfTheMatchName
+    manOfTheMatchName: manOfTheMatchName,
+    playerStats: JSON.parse(JSON.stringify(playerStats))
   };
   historyStack.push(JSON.stringify(currentState));
   if (historyStack.length > 20) historyStack.shift();
@@ -578,6 +593,7 @@ function undoLastAction() {
   matchStatusText = lastState.matchStatusText;
   tossDecisionText = lastState.tossDecisionText;
   manOfTheMatchName = lastState.manOfTheMatchName;
+  playerStats = lastState.playerStats || {};
 
   document.getElementById('in-team-a').value = lastState.teamA;
   document.getElementById('in-team-b').value = lastState.teamB;
@@ -684,6 +700,9 @@ function triggerAnimation(type) {
   } else if (type === 'MAN_OF_THE_MATCH') {
     text.innerText = `🏅 MAN OF THE MATCH: ${manOfTheMatchName.toUpperCase()} 🏅`;
     text.style.color = '#ffd700';
+  } else if (type === 'FULL_SCORECARD') {
+    text.innerText = '📊 FULL SCORECARD';
+    text.style.color = '#b388ff';
   } else {
     return;
   }
@@ -691,7 +710,7 @@ function triggerAnimation(type) {
   overlay.style.display = 'flex';
   setTimeout(() => {
     overlay.style.display = 'none';
-  }, 2500);
+  }, 2200);
 }
 
 function initMatchDatabase(matchId) {
@@ -824,6 +843,20 @@ function sync(animType = "") {
   const needRuns = Math.max(0, target - runs);
   const rrr = remainingBalls > 0 ? ((needRuns / remainingBalls) * 6).toFixed(2) : "0.00";
 
+  // Update active player statistics tracking
+  const sName = document.getElementById('in-striker').value;
+  const bName = document.getElementById('in-bowler').value;
+
+  if (sName && playerStats[sName]) {
+    playerStats[sName].runs = strikerRuns;
+    playerStats[sName].balls = strikerBalls;
+  }
+  if (bName && playerStats[bName]) {
+    playerStats[bName].wickets = bowlerWickets;
+    playerStats[bName].conceded = bowlerRuns;
+    playerStats[bName].overs = `${bowlerOverNum}.${bowlerBallNum}`;
+  }
+
   if (animType !== "") {
     triggerAnimation(animType);
   }
@@ -833,13 +866,13 @@ function sync(animType = "") {
     teamB: document.getElementById('in-team-b').value || 'TEAM B',
     squadA: document.getElementById('in-team-a-squad').value,
     squadB: document.getElementById('in-team-b-squad').value,
-    strikerName: document.getElementById('in-striker').value || 'Striker',
+    strikerName: sName || 'Striker',
     strikerRuns: strikerRuns,
     strikerBalls: strikerBalls,
     nonStrikerName: document.getElementById('in-non-striker').value || 'Non-Striker',
     nonStrikerRuns: nonStrikerRuns,
     nonStrikerBalls: nonStrikerBalls,
-    bowler: document.getElementById('in-bowler').value || 'Bowler Name',
+    bowler: bName || 'Bowler Name',
     bowlerRuns: bowlerRuns,
     bowlerWickets: bowlerWickets,
     bowlerOvers: `${bowlerOverNum}.${bowlerBallNum}`,
@@ -856,6 +889,7 @@ function sync(animType = "") {
     tossText: tossDecisionText,
     matchStatusText: matchStatusText,
     manOfTheMatch: manOfTheMatchName,
+    playerStats: playerStats,
     isMatchOver: isMatchOver,
     lastEvent: animType,
     animId: Date.now()
@@ -918,6 +952,9 @@ function addWicket() {
     wickets++; legalBalls++;
     strikerBalls++; bowlerWickets++; bowlerBalls++;
     currentOverBalls.push('W');
+
+    const sName = document.getElementById('in-striker').value;
+    if (sName && playerStats[sName]) playerStats[sName].isOut = true;
 
     strikerRuns = 0; strikerBalls = 0;
 

@@ -37,8 +37,8 @@
       align-items: center;
       justify-content: center;
       z-index: 9999;
-      background: rgba(0, 0, 0, 0.5);
-      backdrop-filter: blur(4px);
+      background: rgba(0, 0, 0, 0.65);
+      backdrop-filter: blur(6px);
     }
 
     .pop-card {
@@ -63,6 +63,34 @@
     .pop-wicket { background: #0a0e17; color: #ff1744; border: 8px solid #ff1744; text-shadow: 0 0 35px #ff1744; }
     .pop-toss { background: #0a0e17; color: #ffd700; border: 8px solid #ffd700; font-size: 3rem; text-align: center; text-shadow: 0 0 30px #ffd700; }
     .pop-mom { background: #0a0e17; color: #ffd700; border: 8px solid #ffd700; font-size: 3rem; text-align: center; text-shadow: 0 0 35px #ffd700; }
+
+    /* FULL SCORECARD POPUP TABLE */
+    #fullScorecardModal {
+      display: none;
+      position: fixed;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 90vw; max-width: 900px;
+      background: #121927;
+      border: 3px solid #00e5ff;
+      border-radius: 12px;
+      padding: 24px;
+      color: #fff;
+      z-index: 10000;
+      box-shadow: 0 0 50px rgba(0, 229, 255, 0.4);
+      animation: popZoom 0.3s forwards;
+    }
+
+    .scorecard-header {
+      display: flex; justify-content: space-between; align-items: center;
+      border-bottom: 2px solid rgba(255, 255, 255, 0.15); padding-bottom: 12px; margin-bottom: 15px;
+    }
+    .scorecard-header h2 { color: #00e5ff; font-size: 1.8rem; text-transform: uppercase; font-weight: 900; }
+    .scorecard-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .squad-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+    .squad-table th { background: #1a2332; color: #ffd700; text-align: left; padding: 8px; font-weight: 800; }
+    .squad-table td { padding: 6px 8px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); }
+    .squad-table tr:nth-child(even) { background: rgba(255, 255, 255, 0.02); }
 
     /* MAIN OVERLAY CARD */
     .overlay-card {
@@ -149,6 +177,34 @@
     <div id="popBox" class="pop-card pop-six">SIX!</div>
   </div>
 
+  <!-- FULL SCORECARD OVERLAY POPUP (3s) -->
+  <div id="fullScorecardModal">
+    <div class="scorecard-header">
+      <h2 id="scTeams">TEAM A vs TEAM B</h2>
+      <div style="font-size:1.3rem; font-weight:bold; color:#ffd700;" id="scScore">0/0 (0.0 ov)</div>
+    </div>
+    <div class="scorecard-grid">
+      <div>
+        <h3 style="color:#00e5ff; margin-bottom:8px; font-size:1rem;">BATTING SUMMARY</h3>
+        <table class="squad-table">
+          <thead>
+            <tr><th>Batsman</th><th>R</th><th>B</th></tr>
+          </thead>
+          <tbody id="scBattingBody"></tbody>
+        </table>
+      </div>
+      <div>
+        <h3 style="color:#00e5ff; margin-bottom:8px; font-size:1rem;">BOWLING SUMMARY</h3>
+        <table class="squad-table">
+          <thead>
+            <tr><th>Bowler</th><th>O</th><th>W-R</th></tr>
+          </thead>
+          <tbody id="scBowlingBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
   <!-- SCORECARD OVERLAY CARD -->
   <div class="overlay-card" id="mainCard">
     <svg class="card-bg-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 120">
@@ -213,9 +269,37 @@
 
     let lastProcessedAnimId = 0;
 
-    function triggerFullScreenEvent(eventType, extraData = "") {
+    function triggerFullScreenEvent(eventType, extraData = "", rawData = null) {
       const overlay = document.getElementById('popOverlay');
       const box = document.getElementById('popBox');
+      const scModal = document.getElementById('fullScorecardModal');
+
+      if (eventType === 'FULL_SCORECARD' && rawData) {
+        document.getElementById('scTeams').innerText = `${rawData.teamA} vs ${rawData.teamB}`;
+        document.getElementById('scScore').innerText = `${rawData.runs || 0}/${rawData.wickets || 0} (${rawData.overs || '0.0'} ov)`;
+
+        const squadA = rawData.squadA ? rawData.squadA.split(',').map(s => s.trim()) : [];
+        const squadB = rawData.squadB ? rawData.squadB.split(',').map(s => s.trim()) : [];
+        const stats = rawData.playerStats || {};
+
+        let batHtml = '';
+        squadA.forEach(p => {
+          const pStat = stats[p] || { runs: 0, balls: 0 };
+          batHtml += `<tr><td>${p}</td><td>${pStat.runs}</td><td>${pStat.balls}</td></tr>`;
+        });
+        document.getElementById('scBattingBody').innerHTML = batHtml;
+
+        let bowlHtml = '';
+        squadB.forEach(p => {
+          const pStat = stats[p] || { overs: '0.0', wickets: 0, conceded: 0 };
+          bowlHtml += `<tr><td>${p}</td><td>${pStat.overs}</td><td>${pStat.wickets}-${pStat.conceded}</td></tr>`;
+        });
+        document.getElementById('scBowlingBody').innerHTML = bowlHtml;
+
+        scModal.style.display = 'block';
+        setTimeout(() => { scModal.style.display = 'none'; }, 3000);
+        return;
+      }
 
       if (!overlay || !box) return;
 
@@ -310,7 +394,7 @@
       document.getElementById('thisOver').innerText = data.thisOver || '-';
       
       const badge = document.getElementById('animBadge');
-      if (data.lastEvent && !data.lastEvent.includes('TOSS') && data.lastEvent !== 'MAN_OF_THE_MATCH') {
+      if (data.lastEvent && !data.lastEvent.includes('TOSS') && data.lastEvent !== 'MAN_OF_THE_MATCH' && data.lastEvent !== 'FULL_SCORECARD') {
         badge.innerHTML = `<span class="event-anim">${data.lastEvent}</span>`;
       } else {
         badge.innerHTML = '';
@@ -320,7 +404,7 @@
       if (data.lastEvent && data.animId && data.animId !== lastProcessedAnimId) {
         lastProcessedAnimId = data.animId;
         const extraPayload = data.lastEvent === 'MAN_OF_THE_MATCH' ? data.manOfTheMatch : data.tossText;
-        triggerFullScreenEvent(data.lastEvent, extraPayload);
+        triggerFullScreenEvent(data.lastEvent, extraPayload, data);
       }
     });
   </script>

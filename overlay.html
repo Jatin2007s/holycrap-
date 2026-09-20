@@ -26,7 +26,7 @@
       position: relative;
     }
 
-    /* FULL-SCREEN EVENT POPUP OVERLAY */
+    /* FULL-SCREEN EVENT POPUP OVERLAY (SIX, FOUR, WICKET) */
     #popOverlay {
       position: fixed;
       top: 0;
@@ -64,7 +64,7 @@
     .pop-toss { background: #0a0e17; color: #ffd700; border: 8px solid #ffd700; font-size: 3rem; text-align: center; text-shadow: 0 0 30px #ffd700; }
     .pop-mom { background: #0a0e17; color: #ffd700; border: 8px solid #ffd700; font-size: 3rem; text-align: center; text-shadow: 0 0 35px #ffd700; }
 
-    /* REAL FULL SCORECARD BROADCAST POPUP */
+    /* FULL PLAYER SCORECARD OVERLAY POPUP */
     #fullScorecardModal {
       display: none;
       position: fixed;
@@ -78,7 +78,6 @@
       color: #fff;
       z-index: 10000;
       box-shadow: 0 0 50px rgba(0, 229, 255, 0.5);
-      animation: popZoom 0.35s forwards;
     }
 
     .scorecard-header {
@@ -177,12 +176,12 @@
 </head>
 <body>
 
-  <!-- FULL SCREEN EVENT POPUP -->
+  <!-- FULL SCREEN EVENT POPUP (SIX, FOUR, WICKET, TOSS, MOM) -->
   <div id="popOverlay">
     <div id="popBox" class="pop-card pop-six">SIX!</div>
   </div>
 
-  <!-- REAL FULL SCORECARD OVERLAY POPUP (3s) -->
+  <!-- REAL FULL SCORECARD OVERLAY POPUP (5s) -->
   <div id="fullScorecardModal">
     <div class="scorecard-header">
       <h2 id="scTeams">TEAM A vs TEAM B</h2>
@@ -273,40 +272,49 @@
     const matchId = urlParams.get('match') || 'match_1';
 
     let lastProcessedAnimId = 0;
+    let scorecardTimeout = null;
+
+    function renderFullScorecard(rawData) {
+      const scModal = document.getElementById('fullScorecardModal');
+      document.getElementById('scTeams').innerText = `${rawData.teamA} vs ${rawData.teamB}`;
+      document.getElementById('scScore').innerText = `${rawData.runs || 0}/${rawData.wickets || 0} (${rawData.overs || '0.0'} ov)`;
+
+      const squadA = rawData.squadA ? rawData.squadA.split(',').map(s => s.trim()) : [];
+      const squadB = rawData.squadB ? rawData.squadB.split(',').map(s => s.trim()) : [];
+      const stats = rawData.playerStats || {};
+
+      let batHtml = '';
+      squadA.forEach(p => {
+        const pStat = stats[p] || { runs: 0, balls: 0, status: 'Yet to Bat' };
+        let badge = '<span class="status-badge status-yet">YET TO BAT</span>';
+        if (pStat.status === 'out') badge = '<span class="status-badge status-out">OUT</span>';
+        if (pStat.status === 'not out' || pStat.status === 'Batting') badge = '<span class="status-badge status-notout">NOT OUT</span>';
+
+        batHtml += `<tr><td><strong>${p}</strong></td><td>${badge}</td><td><strong>${pStat.runs || 0}</strong></td><td>${pStat.balls || 0}</td></tr>`;
+      });
+      document.getElementById('scBattingBody').innerHTML = batHtml;
+
+      let bowlHtml = '';
+      squadB.forEach(p => {
+        const pStat = stats[p] || { overs: '0.0', wickets: 0, conceded: 0 };
+        bowlHtml += `<tr><td><strong>${p}</strong></td><td>${pStat.overs || '0.0'}</td><td><strong style="color:#ff1744;">${pStat.wickets || 0}</strong></td><td>${pStat.conceded || 0}</td></tr>`;
+      });
+      document.getElementById('scBowlingBody').innerHTML = bowlHtml;
+
+      scModal.style.display = 'block';
+
+      if (scorecardTimeout) clearTimeout(scorecardTimeout);
+      scorecardTimeout = setTimeout(() => {
+        scModal.style.display = 'none';
+      }, 5000);
+    }
 
     function triggerFullScreenEvent(eventType, extraData = "", rawData = null) {
       const overlay = document.getElementById('popOverlay');
       const box = document.getElementById('popBox');
-      const scModal = document.getElementById('fullScorecardModal');
 
       if (eventType === 'FULL_SCORECARD' && rawData && !rawData.isMatchOver) {
-        document.getElementById('scTeams').innerText = `${rawData.teamA} vs ${rawData.teamB}`;
-        document.getElementById('scScore').innerText = `${rawData.runs || 0}/${rawData.wickets || 0} (${rawData.overs || '0.0'} ov)`;
-
-        const squadA = rawData.squadA ? rawData.squadA.split(',').map(s => s.trim()) : [];
-        const squadB = rawData.squadB ? rawData.squadB.split(',').map(s => s.trim()) : [];
-        const stats = rawData.playerStats || {};
-
-        let batHtml = '';
-        squadA.forEach(p => {
-          const pStat = stats[p] || { runs: 0, balls: 0, status: 'Yet to Bat' };
-          let badge = '<span class="status-badge status-yet">YET TO BAT</span>';
-          if (pStat.status === 'out') badge = '<span class="status-badge status-out">OUT</span>';
-          if (pStat.status === 'not out' || pStat.status === 'Batting') badge = '<span class="status-badge status-notout">NOT OUT</span>';
-
-          batHtml += `<tr><td><strong>${p}</strong></td><td>${badge}</td><td><strong>${pStat.runs || 0}</strong></td><td>${pStat.balls || 0}</td></tr>`;
-        });
-        document.getElementById('scBattingBody').innerHTML = batHtml;
-
-        let bowlHtml = '';
-        squadB.forEach(p => {
-          const pStat = stats[p] || { overs: '0.0', wickets: 0, conceded: 0 };
-          bowlHtml += `<tr><td><strong>${p}</strong></td><td>${pStat.overs || '0.0'}</td><td><strong style="color:#ff1744;">${pStat.wickets || 0}</strong></td><td>${pStat.conceded || 0}</td></tr>`;
-        });
-        document.getElementById('scBowlingBody').innerHTML = bowlHtml;
-
-        scModal.style.display = 'block';
-        setTimeout(() => { scModal.style.display = 'none'; }, 3000);
+        renderFullScorecard(rawData);
         return;
       }
 
@@ -347,8 +355,8 @@
       const liveView = document.getElementById('liveView');
       const winnerView = document.getElementById('winnerView');
 
-      // Check if Match is Over -> Hide Live Card and Show ONLY Winner Banner permanently
       if (data.isMatchOver && data.matchStatusText) {
+        document.getElementById('fullScorecardModal').style.display = 'none';
         liveView.style.display = 'none';
         winnerView.style.display = 'block';
         document.getElementById('winnerText').innerText = data.matchStatusText;

@@ -26,7 +26,45 @@
       position: relative;
     }
 
-    /* FULL PLAYER SCORECARD OVERLAY POPUP */
+    /* =========================================================
+       1. ANIMATION DEFINITIONS
+       ========================================================= */
+    @keyframes modalPopIn {
+      0% { opacity: 0; transform: translate(-50%, -45%) scale(0.9); }
+      100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    }
+
+    @keyframes fourGlow {
+      0% { box-shadow: 0 0 10px #38bdf8; border-color: #38bdf8; }
+      50% { box-shadow: 0 0 35px #38bdf8, inset 0 0 15px #38bdf8; border-color: #38bdf8; transform: scale(1.02); }
+      100% { box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6); border-color: rgba(255, 255, 255, 0.08); transform: scale(1); }
+    }
+
+    @keyframes sixGlow {
+      0% { box-shadow: 0 0 10px #ffd700; border-color: #ffd700; }
+      50% { box-shadow: 0 0 45px #ffd700, inset 0 0 20px #ffd700; border-color: #ffd700; transform: scale(1.03); }
+      100% { box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6); border-color: rgba(255, 255, 255, 0.08); transform: scale(1); }
+    }
+
+    @keyframes wicketPulse {
+      0% { box-shadow: 0 0 10px #ff1744; border-color: #ff1744; }
+      50% { box-shadow: 0 0 50px #ff1744, inset 0 0 25px #ff1744; border-color: #ff1744; transform: scale(1.03); }
+      100% { box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6); border-color: rgba(255, 255, 255, 0.08); transform: scale(1); }
+    }
+
+    @keyframes pulseLogo {
+      0%, 100% { opacity: 0.12; transform: scale(1); }
+      50% { opacity: 0.25; transform: scale(1.05); }
+    }
+
+    /* Helper Trigger Classes */
+    .anim-4 { animation: fourGlow 1.2s ease-out; }
+    .anim-6 { animation: sixGlow 1.2s ease-out; }
+    .anim-wicket { animation: wicketPulse 1.2s ease-out; }
+
+    /* =========================================================
+       2. FULL SCORECARD POPUP MODAL
+       ========================================================= */
     #fullScorecardModal {
       display: none;
       position: fixed;
@@ -40,6 +78,11 @@
       color: #fff;
       z-index: 10000;
       box-shadow: 0 0 50px rgba(0, 229, 255, 0.5);
+    }
+
+    #fullScorecardModal.active {
+      display: block !important;
+      animation: modalPopIn 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
     }
 
     .scorecard-header {
@@ -59,7 +102,9 @@
     .status-notout { background: rgba(46, 125, 50, 0.2); color: #4caf50; border: 1px solid #4caf50; }
     .status-yet { color: #888; }
 
-    /* MAIN OVERLAY CARD */
+    /* =========================================================
+       3. MAIN OVERLAY CARD
+       ========================================================= */
     .overlay-card {
       width: 100%;
       max-width: 850px;
@@ -71,12 +116,14 @@
       border: 1px solid rgba(255, 255, 255, 0.08);
       position: relative;
       overflow: hidden;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
 
     .card-bg-logo {
       position: absolute; right: -10px; bottom: -15px; height: 140%; width: auto;
       opacity: 0.12; pointer-events: none; z-index: 0;
       filter: drop-shadow(0 0 12px rgba(0, 229, 255, 0.4));
+      animation: pulseLogo 4s infinite ease-in-out;
     }
 
     .top-bar, .bottom-bar { position: relative; z-index: 1; }
@@ -87,15 +134,10 @@
     }
 
     .teams { font-size: 20px; font-weight: 800; color: #facc15; letter-spacing: 0.5px; }
-
     .score-container { display: flex; align-items: baseline; gap: 10px; }
-
     .score { font-size: 28px; font-weight: 900; color: #ffffff; }
-
     .target { font-size: 14px; color: #f87171; font-weight: bold; }
-
     .overs { font-size: 16px; font-weight: 600; color: #94a3b8; }
-    
     .rr-info { font-size: 12px; color: #38bdf8; font-weight: 700; margin-left: 6px; }
 
     .bottom-bar {
@@ -104,13 +146,9 @@
     }
 
     .batsmen { color: #e2e8f0; }
-
     .highlight { color: #facc15; font-weight: bold; }
-
     .bowler-info { text-align: right; }
-
     .bowler { color: #facc15; font-weight: bold; }
-
     .this-over { color: #38bdf8; font-weight: bold; font-size: 13px; margin-top: 2px; }
 
     /* MATCH FINISHED / WINNER CARD DISPLAY */
@@ -129,7 +167,7 @@
 </head>
 <body>
 
-  <!-- REAL FULL SCORECARD OVERLAY POPUP (5s) -->
+  <!-- FULL PLAYER SCORECARD OVERLAY POPUP -->
   <div id="fullScorecardModal">
     <div class="scorecard-header">
       <h2 id="scTeams">TEAM A vs TEAM B</h2>
@@ -232,8 +270,24 @@
       return (o * 6) + b;
     }
 
-    function renderFullScorecard(rawData) {
-      const scModal = document.getElementById('fullScorecardModal');
+    function triggerEventAnimation(eventType) {
+      const card = document.getElementById('mainCard');
+      card.classList.remove('anim-4', 'anim-6', 'anim-wicket');
+      
+      // Force DOM Reflow so keyframes trigger again
+      void card.offsetWidth;
+
+      const evt = String(eventType).toUpperCase();
+      if (evt === '4' || evt === 'FOUR') {
+        card.classList.add('anim-4');
+      } else if (evt === '6' || evt === 'SIX') {
+        card.classList.add('anim-6');
+      } else if (evt === 'W' || evt === 'WICKET' || evt === 'OUT') {
+        card.classList.add('anim-wicket');
+      }
+    }
+
+    function updateModalContent(rawData) {
       document.getElementById('scTeams').innerText = `${rawData.teamA || 'TEAM A'} vs ${rawData.teamB || 'TEAM B'}`;
       document.getElementById('scScore').innerText = `${rawData.runs || 0}/${rawData.wickets || 0} (${rawData.overs || '0.0'} ov)`;
 
@@ -249,7 +303,6 @@
         if (pStat.status === 'not out' || pStat.status === 'Batting') badge = '<span class="status-badge status-notout">NOT OUT</span>';
 
         const sr = pStat.balls > 0 ? ((pStat.runs / pStat.balls) * 100).toFixed(1) : '0.0';
-
         batHtml += `<tr><td><strong>${p}</strong></td><td>${badge}</td><td><strong>${pStat.runs || 0}</strong></td><td>${pStat.balls || 0}</td><td>${sr}</td></tr>`;
       });
       document.getElementById('scBattingBody').innerHTML = batHtml || '<tr><td colspan="5">No data</td></tr>';
@@ -263,12 +316,15 @@
         bowlHtml += `<tr><td><strong>${p}</strong></td><td>${pStat.overs || '0.0'}</td><td><strong style="color:#ff1744;">${pStat.wickets || 0}</strong></td><td>${pStat.conceded || 0}</td><td>${econ}</td></tr>`;
       });
       document.getElementById('scBowlingBody').innerHTML = bowlHtml || '<tr><td colspan="5">No data</td></tr>';
+    }
 
-      scModal.style.display = 'block';
+    function showModalTemporarily() {
+      const scModal = document.getElementById('fullScorecardModal');
+      scModal.classList.add('active');
 
       if (scorecardTimeout) clearTimeout(scorecardTimeout);
       scorecardTimeout = setTimeout(() => {
-        scModal.style.display = 'none';
+        scModal.classList.remove('active');
       }, 5000);
     }
 
@@ -280,15 +336,11 @@
       const winnerView = document.getElementById('winnerView');
 
       if (data.isMatchOver && data.matchStatusText) {
-        document.getElementById('fullScorecardModal').style.display = 'none';
+        document.getElementById('fullScorecardModal').classList.remove('active');
         liveView.style.display = 'none';
         winnerView.style.display = 'block';
         document.getElementById('winnerText').innerText = data.matchStatusText;
-        if (data.manOfTheMatch) {
-          document.getElementById('momText').innerText = `🏅 MAN OF THE MATCH: ${data.manOfTheMatch.toUpperCase()}`;
-        } else {
-          document.getElementById('momText').innerText = '';
-        }
+        document.getElementById('momText').innerText = data.manOfTheMatch ? `🏅 MAN OF THE MATCH: ${data.manOfTheMatch.toUpperCase()}` : '';
         return;
       } else {
         liveView.style.display = 'block';
@@ -306,7 +358,6 @@
       document.getElementById('overs').innerText = oversStr;
       document.getElementById('maxOvers').innerText = data.maxOvers || 20;
 
-      // Calculate Current Run Rate (CRR)
       const totalBalls = parseOversToBalls(oversStr);
       const crr = totalBalls > 0 ? ((runs / totalBalls) * 6).toFixed(2) : '0.00';
       document.getElementById('crrDisplay').innerText = `CRR: ${crr}`;
@@ -336,9 +387,18 @@
 
       document.getElementById('thisOver').innerText = data.thisOver || '-';
 
-      if (data.lastEvent === 'FULL_SCORECARD' && data.animId && data.animId !== lastProcessedAnimId) {
+      // Keep full scorecard updated in background
+      updateModalContent(data);
+
+      // Handle Event Animations & Popups when animId updates
+      if (data.animId && data.animId !== lastProcessedAnimId) {
         lastProcessedAnimId = data.animId;
-        renderFullScorecard(data);
+
+        if (data.lastEvent === 'FULL_SCORECARD') {
+          showModalTemporarily();
+        } else {
+          triggerEventAnimation(data.lastEvent);
+        }
       }
     });
   </script>

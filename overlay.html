@@ -8,7 +8,7 @@
   
   <style>
     /* ==========================================
-       1. GLOBAL & CONTAINER STYLES
+       1. BASE LAYOUT & RESET
        ========================================== */
     * {
       box-sizing: border-box;
@@ -21,29 +21,29 @@
       width: 1920px;
       height: 1080px;
       overflow: hidden;
-      background: transparent; /* Clear background for OBS / Broadcast software */
+      background: transparent;
       position: relative;
       color: #ffffff;
       text-transform: uppercase;
     }
 
     /* ==========================================
-       2. BOTTOM MAIN SCOREBAR
+       2. BOTTOM SCOREBAR GRAPHIC
        ========================================== */
     #scorebar {
       position: absolute;
       bottom: 40px;
       left: 50%;
-      transform: translateX(-50%) translateY(150px);
+      transform: translateX(-50%) translateY(180px);
       display: flex;
       align-items: center;
-      background: rgba(10, 15, 29, 0.92);
+      background: rgba(10, 15, 29, 0.94);
       border-radius: 12px;
       border: 2px solid rgba(255, 255, 255, 0.15);
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7), 0 0 20px rgba(0, 168, 255, 0.2);
-      height: 70px;
-      padding: 0 20px;
-      transition: transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8), 0 0 20px rgba(0, 168, 255, 0.25);
+      height: 72px;
+      padding: 0 24px;
+      transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
       z-index: 100;
     }
 
@@ -52,37 +52,29 @@
     }
 
     .team-badge {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      font-size: 38px;
+      font-size: 40px;
       font-weight: 700;
       letter-spacing: 1px;
       padding-right: 20px;
-      border-right: 2px solid rgba(255, 255, 255, 0.1);
-    }
-
-    .team-flag {
-      width: 40px;
-      height: 28px;
-      border-radius: 4px;
-      object-fit: cover;
-      background: #222;
+      border-right: 2px solid rgba(255, 255, 255, 0.12);
+      color: #ffffff;
     }
 
     .main-score {
-      font-size: 52px;
+      font-size: 54px;
       font-weight: 700;
       color: #00e5ff;
       padding: 0 20px;
-      text-shadow: 0 0 10px rgba(0, 229, 255, 0.5);
+      text-shadow: 0 0 12px rgba(0, 229, 255, 0.6);
+      min-width: 130px;
+      text-align: center;
     }
 
     .overs-tag {
       font-size: 28px;
       color: #a0aec0;
       padding-right: 20px;
-      border-right: 2px solid rgba(255, 255, 255, 0.1);
+      border-right: 2px solid rgba(255, 255, 255, 0.12);
     }
 
     .batsmen-section {
@@ -96,13 +88,15 @@
     .batsman {
       display: flex;
       align-items: center;
-      gap: 8px;
-      opacity: 0.7;
+      gap: 6px;
+      opacity: 0.65;
+      transition: opacity 0.3s ease, color 0.3s ease;
     }
 
     .batsman.striker {
       opacity: 1;
       color: #ffea00;
+      font-weight: 800;
     }
 
     .batsman.striker::after {
@@ -112,38 +106,39 @@
 
     .bowler-section {
       padding-left: 20px;
-      border-left: 2px solid rgba(255, 255, 255, 0.1);
+      border-left: 2px solid rgba(255, 255, 255, 0.12);
       font-family: 'Montserrat', sans-serif;
       font-size: 16px;
       color: #e2e8f0;
     }
 
     /* ==========================================
-       3. CENTER POPUP ANNOUNCEMENT OVERLAY
+       3. ANNOUNCEMENT POPUP OVERLAY
        ========================================== */
     #announcement-overlay {
       position: absolute;
       top: 40%;
       left: 50%;
-      transform: translate(-50%, -50%) scale(0);
+      transform: translate(-50%, -50%) scale(0.6);
       opacity: 0;
+      visibility: hidden;
       text-align: center;
       z-index: 500;
-      pointer-events: none;
-      transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+      transition: all 0.35s cubic-bezier(0.68, -0.55, 0.265, 1.55);
     }
 
     #announcement-overlay.show {
       transform: translate(-50%, -50%) scale(1);
       opacity: 1;
+      visibility: visible;
     }
 
     .announcement-box {
       background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
       border: 4px solid #00e5ff;
-      padding: 20px 60px;
+      padding: 24px 70px;
       border-radius: 20px;
-      box-shadow: 0 0 50px rgba(0, 229, 255, 0.6), inset 0 0 20px rgba(0, 229, 255, 0.4);
+      box-shadow: 0 0 60px rgba(0, 229, 255, 0.6), inset 0 0 25px rgba(0, 229, 255, 0.3);
     }
 
     .announcement-title {
@@ -158,16 +153,17 @@
 
     .announcement-subtitle {
       font-family: 'Montserrat', sans-serif;
-      font-size: 24px;
+      font-size: 22px;
       letter-spacing: 4px;
       color: #ffea00;
       margin-top: 10px;
+      font-weight: 800;
     }
 
-    /* Wicket theme styling override */
+    /* Wicket specific theme */
     #announcement-overlay.wicket .announcement-box {
       border-color: #ff1744;
-      box-shadow: 0 0 50px rgba(255, 23, 68, 0.6), inset 0 0 20px rgba(255, 23, 68, 0.4);
+      box-shadow: 0 0 60px rgba(255, 23, 68, 0.6), inset 0 0 25px rgba(255, 23, 68, 0.3);
     }
     #announcement-overlay.wicket .announcement-title {
       background: linear-gradient(180deg, #ffffff 0%, #ff1744 100%);
@@ -191,7 +187,7 @@
       box-shadow: 0 20px 60px rgba(0, 0, 0, 0.9);
       opacity: 0;
       visibility: hidden;
-      transition: all 0.5s ease;
+      transition: all 0.4s ease;
       z-index: 400;
     }
 
@@ -233,27 +229,16 @@
       padding: 12px;
       border-bottom: 1px solid rgba(255, 255, 255, 0.05);
     }
-
-    /* Pulse animation utility */
-    .pulse-anim {
-      animation: pulse 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    }
-
-    @keyframes pulse {
-      0% { transform: scale(1); }
-      50% { transform: scale(1.08); }
-      100% { transform: scale(1); }
-    }
   </style>
 </head>
 <body>
 
   <!-- ==========================================
-       BOTTOM SCOREBAR GRAPHIC
+       BOTTOM SCOREBAR
        ========================================== -->
   <div id="scorebar" class="active">
     <div class="team-badge">
-      <div id="team-name">IND</div>
+      <span id="team-name">IND</span>
     </div>
     
     <div class="main-score">
@@ -266,11 +251,11 @@
 
     <div class="batsmen-section">
       <div class="batsman striker" id="batsman1-container">
-        <span id="batsman1-name">BATSMAN 1</span>
+        <span id="batsman1-name">BATSMAN 1</span> 
         <span id="batsman1-runs">0</span>(<span id="batsman1-balls">0</span>)
       </div>
       <div class="batsman" id="batsman2-container">
-        <span id="batsman2-name">BATSMAN 2</span>
+        <span id="batsman2-name">BATSMAN 2</span> 
         <span id="batsman2-runs">0</span>(<span id="batsman2-balls">0</span>)
       </div>
     </div>
@@ -283,7 +268,7 @@
   </div>
 
   <!-- ==========================================
-       CENTER ANNOUNCEMENT POPUP
+       ANNOUNCEMENT POPUP
        ========================================== -->
   <div id="announcement-overlay">
     <div class="announcement-box">
@@ -293,7 +278,7 @@
   </div>
 
   <!-- ==========================================
-       FULL-SCREEN SCORECARD OVERLAY
+       FULL SCORECARD OVERLAY
        ========================================== -->
   <div id="full-scorecard">
     <div class="scorecard-header">
@@ -305,56 +290,39 @@
       <thead>
         <tr>
           <th>Batter</th>
-          <th>Dismissal</th>
+          <th>Status</th>
           <th>R</th>
           <th>B</th>
-          <th>4s</th>
-          <th>6s</th>
-          <th>SR</th>
         </tr>
       </thead>
       <tbody id="scorecard-rows">
-        <!-- Dynamically Populated Rows -->
+        <!-- Dynamically filled -->
       </tbody>
     </table>
   </div>
 
   <!-- ==========================================
-       REAL-TIME DATA & ANIMATION CONTROLLER ENGINE
+       REAL-TIME LISTENERS & RENDER LOGIC
        ========================================== -->
   <script>
-    // State Tracking Data Structure
-    const overlayState = {
-      team: "IND",
-      runs: 0,
-      wickets: 0,
-      overs: "0.0",
-      batsman1: { name: "BATSMAN 1", runs: 0, balls: 0, isStriker: true },
-      batsman2: { name: "BATSMAN 2", runs: 0, balls: 0, isStriker: false },
-      bowler: { name: "BOWLER", runs: 0, wickets: 0, overs: "0.0" }
-    };
-
+    const channel = new BroadcastChannel('cricket_overlay_channel');
     let announcementTimer = null;
     let scorecardTimer = null;
 
-    /* ------------------------------------------
-       1. DATA RENDER ENGINE
-       ------------------------------------------ */
+    /* 1. UPDATE OVERLAY DATA */
     function renderOverlay(data) {
       if (!data) return;
 
-      // Update basic details
-      document.getElementById('team-name').innerText = data.team || "IND";
-      document.getElementById('runs').innerText = data.runs ?? 0;
-      document.getElementById('wickets').innerText = data.wickets ?? 0;
-      document.getElementById('overs').innerText = data.overs || "0.0";
+      if (data.team !== undefined) document.getElementById('team-name').innerText = data.team;
+      if (data.runs !== undefined) document.getElementById('runs').innerText = data.runs;
+      if (data.wickets !== undefined) document.getElementById('wickets').innerText = data.wickets;
+      if (data.overs !== undefined) document.getElementById('overs').innerText = data.overs;
 
-      // Update Batsmen details
       if (data.batsman1) {
         document.getElementById('batsman1-name').innerText = data.batsman1.name || "BAT1";
         document.getElementById('batsman1-runs').innerText = data.batsman1.runs ?? 0;
         document.getElementById('batsman1-balls').innerText = data.batsman1.balls ?? 0;
-        
+
         const b1 = document.getElementById('batsman1-container');
         if (data.batsman1.isStriker) b1.classList.add('striker');
         else b1.classList.remove('striker');
@@ -370,7 +338,6 @@
         else b2.classList.remove('striker');
       }
 
-      // Update Bowler details
       if (data.bowler) {
         document.getElementById('bowler-name').innerText = data.bowler.name || "BOWLER";
         document.getElementById('bowler-wickets').innerText = data.bowler.wickets ?? 0;
@@ -379,21 +346,21 @@
       }
     }
 
-    /* ------------------------------------------
-       2. DYNAMIC POPUP ANNOUNCEMENTS
-       ------------------------------------------ */
+    /* 2. TRIGGER POPUP ANNOUNCEMENT */
     function triggerAnnouncement(type, text, subtitle = "") {
       const overlay = document.getElementById('announcement-overlay');
       const titleElem = document.getElementById('announcement-title');
       const subElem = document.getElementById('announcement-subtitle');
 
-      // Clear existing active timers
+      // Clear existing active timer to allow repeated clicks
       if (announcementTimer) clearTimeout(announcementTimer);
 
-      // Reset classes
+      overlay.classList.remove('show');
+
+      // Force browser reflow to restart animation smoothly
+      void overlay.offsetWidth;
+
       overlay.className = '';
-      
-      // Configure announcement state
       titleElem.innerText = text;
       subElem.innerText = subtitle;
 
@@ -401,19 +368,16 @@
         overlay.classList.add('wicket');
       }
 
-      // Show Popup with animation trigger
       overlay.classList.add('show');
 
-      // Auto dismiss announcement popup after 3.5 seconds
+      // Hide after 3.5 seconds
       announcementTimer = setTimeout(() => {
         overlay.classList.remove('show');
       }, 3500);
     }
 
-    /* ------------------------------------------
-       3. FULL SCORECARD GRAPHIC SHOWCASE
-       ------------------------------------------ */
-    function triggerScorecard(playersData) {
+    /* 3. TRIGGER FULL SCORECARD */
+    function triggerScorecard() {
       const scorecard = document.getElementById('full-scorecard');
       const rowsContainer = document.getElementById('scorecard-rows');
       
@@ -422,91 +386,80 @@
       document.getElementById('sc-team-title').innerText = `${document.getElementById('team-name').innerText} INNINGS`;
       document.getElementById('sc-total').innerText = `${document.getElementById('runs').innerText}/${document.getElementById('wickets').innerText} (${document.getElementById('overs').innerText} Ov)`;
 
-      // Populate table dynamically if data provided
-      if (Array.isArray(playersData) && playersData.length > 0) {
-        rowsContainer.innerHTML = playersData.map(p => `
-          <tr>
-            <td style="font-weight: 600;">${p.name}</td>
-            <td style="color: #a0aec0;">${p.dismissal || 'not out'}</td>
-            <td style="color: #00e5ff; font-weight: 700;">${p.runs}</td>
-            <td>${p.balls}</td>
-            <td>${p.fours || 0}</td>
-            <td>${p.sixes || 0}</td>
-            <td>${p.balls > 0 ? ((p.runs / p.balls) * 100).toFixed(1) : '0.0'}</td>
-          </tr>
-        `).join('');
-      } else {
-        // Fallback placeholder display using active state
-        rowsContainer.innerHTML = `
-          <tr>
-            <td>${document.getElementById('batsman1-name').innerText}</td>
-            <td style="color: #00e5ff;">batting</td>
-            <td style="color: #00e5ff; font-weight: 700;">${document.getElementById('batsman1-runs').innerText}</td>
-            <td>${document.getElementById('batsman1-balls').innerText}</td>
-            <td>-</td>
-            <td>-</td>
-            <td>-</td>
-          </tr>
-          <tr>
-            <td>${document.getElementById('batsman2-name').innerText}</td>
-            <td style="color: #00e5ff;">batting</td>
-            <td style="color: #00e5ff; font-weight: 700;">${document.getElementById('batsman2-runs').innerText}</td>
-            <td>${document.getElementById('batsman2-balls').innerText}</td>
-            <td>-</td>
-            <td>-</td>
-            <td>-</td>
-          </tr>
-        `;
-      }
+      rowsContainer.innerHTML = `
+        <tr>
+          <td style="font-weight: 600;">${document.getElementById('batsman1-name').innerText}</td>
+          <td style="color: #00e5ff;">batting</td>
+          <td style="color: #00e5ff; font-weight: 700;">${document.getElementById('batsman1-runs').innerText}</td>
+          <td>${document.getElementById('batsman1-balls').innerText}</td>
+        </tr>
+        <tr>
+          <td style="font-weight: 600;">${document.getElementById('batsman2-name').innerText}</td>
+          <td style="color: #00e5ff;">batting</td>
+          <td style="color: #00e5ff; font-weight: 700;">${document.getElementById('batsman2-runs').innerText}</td>
+          <td>${document.getElementById('batsman2-balls').innerText}</td>
+        </tr>
+      `;
 
-      // Show Full-Screen Scorecard overlay
       scorecard.classList.add('active');
 
-      // Auto dismiss full scorecard after 6 seconds
       scorecardTimer = setTimeout(() => {
         scorecard.classList.remove('active');
       }, 6000);
     }
 
-    /* ------------------------------------------
-       4. LOCAL & EVENT STORAGE SYNC LISTENER
-       ------------------------------------------ */
+    /* 4. HANDLE INCOMING EVENT TRIGGERS */
+    function handleEvent(eventData) {
+      if (!eventData || !eventData.type) return;
+
+      switch (eventData.type) {
+        case 'FOUR':
+          triggerAnnouncement('FOUR', 'FOUR!', 'MAGNIFICENT SHOT');
+          break;
+        case 'SIX':
+          triggerAnnouncement('SIX', 'SIX!', 'OUT OF THE PARK');
+          break;
+        case 'WICKET':
+          triggerAnnouncement('WICKET', 'WICKET!', 'BIG BREAKTHROUGH');
+          break;
+        case 'SHOW_SCORECARD':
+          triggerScorecard();
+          break;
+        case 'TOGGLE_SCOREBAR':
+          document.getElementById('scorebar').classList.toggle('active');
+          break;
+      }
+    }
+
+    /* 5. DUAL LISTENERS: BROADCAST CHANNEL + LOCALSTORAGE FALLBACK */
+    
+    // BroadcastChannel Listener (Instant execution across tabs/windows)
+    channel.onmessage = (e) => {
+      if (e.data.action === 'UPDATE_DATA') {
+        renderOverlay(e.data.payload);
+      } else if (e.data.action === 'TRIGGER_EVENT') {
+        handleEvent(e.data.payload);
+      }
+    };
+
+    // Storage Event Listener (Fallback support for OBS/Separate origins)
     window.addEventListener('storage', (e) => {
       if (e.key === 'cricket_overlay_data' && e.newValue) {
-        const payload = JSON.parse(e.newValue);
-        renderOverlay(payload);
+        renderOverlay(JSON.parse(e.newValue));
       }
-
       if (e.key === 'cricket_event_trigger' && e.newValue) {
-        const eventData = JSON.parse(e.newValue);
-        
-        switch (eventData.type) {
-          case 'FOUR':
-            triggerAnnouncement('FOUR', 'FOUR!', 'MAGNIFICENT SHOT');
-            break;
-          case 'SIX':
-            triggerAnnouncement('SIX', 'SIX!', 'OUT OF THE PARK');
-            break;
-          case 'WICKET':
-            triggerAnnouncement('WICKET', 'WICKET!', 'BIG BREAKTHROUGH');
-            break;
-          case 'MOTM':
-            triggerAnnouncement('MOTM', 'MAN OF THE MATCH', eventData.player || '');
-            break;
-          case 'SHOW_SCORECARD':
-            triggerScorecard(eventData.players);
-            break;
-          case 'TOGGLE_SCOREBAR':
-            document.getElementById('scorebar').classList.toggle('active');
-            break;
-        }
+        handleEvent(JSON.parse(e.newValue));
       }
     });
 
-    // Initial Load Check
+    // Initial load check from storage
     const initialData = localStorage.getItem('cricket_overlay_data');
     if (initialData) {
-      renderOverlay(JSON.parse(initialData));
+      try {
+        renderOverlay(JSON.parse(initialData));
+      } catch (err) {
+        console.error("Error parsing saved score data", err);
+      }
     }
   </script>
 </body>

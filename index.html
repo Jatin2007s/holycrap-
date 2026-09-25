@@ -21,7 +21,7 @@
 
 * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
 body { background-color: var(--bg-dark); color: var(--text-main); padding: 15px; min-height: 100vh; }
-.container { max-width: 850px; margin: 0 auto; display: none; flex-direction: column; gap: 15px; }
+.container { max-width: 850px; margin: 0 auto; display: flex; flex-direction: column; gap: 15px; }
 
 /* Modals */
 #paywallModal, #tossModal, #coinFlipModal, #tossWinnerModal, #nextBowlerModal, #newBatsmanModal, #extraRunsModal {
@@ -155,6 +155,7 @@ button:active { transform: scale(0.98); }
 .btn-dark { background: #1a2332; color: #fff; border: 1px solid var(--border-color); }
 .btn-orange { background: #e65100; }
 .btn-undo { background: linear-gradient(135deg, #d81b60, #8e24aa); color: #fff; font-size: 1rem; box-shadow: 0 4px 12px rgba(216, 27, 96, 0.4); }
+.btn-reset { background: linear-gradient(135deg, #b71c1c, #880e4f); color: #fff; font-size: 1rem; box-shadow: 0 4px 12px rgba(183, 28, 28, 0.4); }
 
 #target-banner { display: none; justify-content: space-between; background: #1a237e; padding: 10px; border-radius: 6px; }
 #status-banner { display: none; text-align: center; font-weight: bold; background: #f57f17; color: #000; padding: 8px; border-radius: 6px; }
@@ -247,70 +248,70 @@ button:active { transform: scale(0.98); }
   </div>
 </div>
 
-<!-- PASSKEY MODAL -->
+<!-- PASSKEY UNLOCK MODAL -->
 <div id="paywallModal">
-<div class="modal-card">
-<svg class="card-bg-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 120">
-<defs>
-<linearGradient id="bgGlow" x1="0%" y1="0%" x2="100%" y2="0%">
-<stop offset="0%" stop-color="#FF1744" />
-<stop offset="100%" stop-color="#D50000" />
-</linearGradient>
-</defs>
-<g transform="translate(15, 10)">
-<circle cx="50" cy="50" r="38" fill="url(#bgGlow)" />
-<path d="M 28 28 C 38 40 38 60 28 72 M 72 28 C 62 40 62 60 72 72" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" fill="none" />
-<path d="M 0 50 H 22 L 32 30 L 44 72 L 56 32 L 66 58 L 76 50 H 100" stroke="#00E5FF" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none" />
-</g>
-<text x="125" y="62" font-family="sans-serif" font-weight="900" font-size="34" fill="#FFFFFF">PULSE</text>
-<text x="126" y="88" font-family="sans-serif" font-weight="700" font-size="16" fill="#00E5FF" letter-spacing="5">STREAMING</text>
-</svg>
+  <div class="modal-card">
+    <svg class="card-bg-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 120">
+      <defs>
+        <linearGradient id="bgGlow" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stop-color="#FF1744" />
+          <stop offset="100%" stop-color="#D50000" />
+        </linearGradient>
+      </defs>
+      <g transform="translate(15, 10)">
+        <circle cx="50" cy="50" r="38" fill="url(#bgGlow)" />
+        <path d="M 28 28 C 38 40 38 60 28 72 M 72 28 C 62 40 62 60 72 72" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" fill="none" />
+        <path d="M 0 50 H 22 L 32 30 L 44 72 L 56 32 L 66 58 L 76 50 H 100" stroke="#00E5FF" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+      </g>
+      <text x="125" y="62" font-family="sans-serif" font-weight="900" font-size="34" fill="#FFFFFF">PULSE</text>
+      <text x="126" y="88" font-family="sans-serif" font-weight="700" font-size="16" fill="#00E5FF" letter-spacing="5">STREAMING</text>
+    </svg>
 
-<div class="card-content">
-<div class="brand-header">
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 120">
-<defs>
-<linearGradient id="headerGlow" x1="0%" y1="0%" x2="100%" y2="0%">
-<stop offset="0%" stop-color="#FF1744" />
-<stop offset="100%" stop-color="#D50000" />
-</linearGradient>
-</defs>
-<g transform="translate(15, 10)">
-<circle cx="50" cy="50" r="38" fill="url(#headerGlow)" />
-<path d="M 28 28 C 38 40 38 60 28 72 M 72 28 C 62 40 62 60 72 72" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" fill="none" />
-<path d="M 0 50 H 22 L 32 30 L 44 72 L 56 32 L 66 58 L 76 50 H 100" stroke="#00E5FF" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none" />
-</g>
-<text x="125" y="62" font-family="sans-serif" font-weight="900" font-size="34" fill="#FFFFFF">PULSE</text>
-<text x="126" y="88" font-family="sans-serif" font-weight="700" font-size="16" fill="#00E5FF" letter-spacing="5">STREAMING</text>
-</svg>
-<p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 5px;">Enter Access Key to unlock scoring controls</p>
-</div>
-<input type="text" id="accessKeyInput" placeholder="Enter Access Key">
-<button class="btn-red" style="width:100%;" onclick="verifyLicenseKey()">UNLOCK CONTROLLER</button>
+    <div class="card-content">
+      <div class="brand-header">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 120">
+          <defs>
+            <linearGradient id="headerGlow" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="#FF1744" />
+              <stop offset="100%" stop-color="#D50000" />
+            </linearGradient>
+          </defs>
+          <g transform="translate(15, 10)">
+            <circle cx="50" cy="50" r="38" fill="url(#headerGlow)" />
+            <path d="M 28 28 C 38 40 38 60 28 72 M 72 28 C 62 40 62 60 72 72" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" fill="none" />
+            <path d="M 0 50 H 22 L 32 30 L 44 72 L 56 32 L 66 58 L 76 50 H 100" stroke="#00E5FF" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+          </g>
+          <text x="125" y="62" font-family="sans-serif" font-weight="900" font-size="34" fill="#FFFFFF">PULSE</text>
+          <text x="126" y="88" font-family="sans-serif" font-weight="700" font-size="16" fill="#00E5FF" letter-spacing="5">STREAMING</text>
+        </svg>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 5px;">Enter Access Key to unlock scoring controls</p>
+      </div>
+      <input type="text" id="accessKeyInput" placeholder="Enter Access Key">
+      <button class="btn-red" style="width:100%;" onclick="verifyLicenseKey()">UNLOCK CONTROLLER</button>
 
-<div class="payment-box">
-<div class="price-tag">Access Fee: ₹99</div>
-<p style="font-size: 0.8rem; color: var(--text-muted);">Scan QR or select your payment app below:</p>
-<img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=upi%3A%2F%2Fpay%3Fpa%3D920156929%40ibl%26pn%3DBank%2520Of%2520India%26am%3D99%26cu%3DINR" alt="UPI QR Code">
-<div class="upi-id">UPI ID: <span>920156929@ibl</span></div>
+      <div class="payment-box">
+        <div class="price-tag">Access Fee: ₹99</div>
+        <p style="font-size: 0.8rem; color: var(--text-muted);">Scan QR or select your payment app below:</p>
+        <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=upi%3A%2F%2Fpay%3Fpa%3D920156929%40ibl%26pn%3DBank%2520Of%2520India%26am%3D99%26cu%3DINR" alt="UPI QR Code">
+        <div class="upi-id">UPI ID: <span>920156929@ibl</span></div>
 
-<div class="app-buttons">
-<a href="upi://pay?pa=920156929@ibl&pn=Bank%20Of%20India&am=99&cu=INR" class="pay-app-btn btn-phonepe">PhonePe</a>
-<a href="upi://pay?pa=920156929@ibl&pn=Bank%20Of%20India&am=99&cu=INR" class="pay-app-btn btn-gpay">Google Pay</a>
-<a href="upi://pay?pa=920156929@ibl&pn=Bank%20Of%20India&am=99&cu=INR" class="pay-app-btn btn-paytm">Paytm</a>
-<a href="upi://pay?pa=920156929@ibl&pn=Bank%20Of%20India&am=99&cu=INR" class="pay-app-btn btn-bhim">BHIM</a>
-</div>
+        <div class="app-buttons">
+          <a href="upi://pay?pa=920156929@ibl&pn=Bank%20Of%20India&am=99&cu=INR" class="pay-app-btn btn-phonepe">PhonePe</a>
+          <a href="upi://pay?pa=920156929@ibl&pn=Bank%20Of%20India&am=99&cu=INR" class="pay-app-btn btn-gpay">Google Pay</a>
+          <a href="upi://pay?pa=920156929@ibl&pn=Bank%20Of%20India&am=99&cu=INR" class="pay-app-btn btn-paytm">Paytm</a>
+          <a href="upi://pay?pa=920156929@ibl&pn=Bank%20Of%20India&am=99&cu=INR" class="pay-app-btn btn-bhim">BHIM</a>
+        </div>
 
-<a href="https://wa.me/91920156929?text=Hi%2C%20I%20paid%20%E2%82%B999%20for%20the%20Cricket%20Score%20Controller.%20Please%20send%20my%20passkey." target="_blank" class="btn-whatsapp">
-💬 Send Screenshot on WhatsApp
-</a>
+        <a href="https://wa.me/91920156929?text=Hi%2C%20I%20paid%20%E2%82%B999%20for%20the%20Cricket%20Score%20Controller.%20Please%20send%20my%20passkey." target="_blank" class="btn-whatsapp">
+        💬 Send Screenshot on WhatsApp
+        </a>
 
-<div class="disclaimer">
-⚠️ <strong>Disclaimer:</strong> Generating passkey can take time, so please wait after sending your payment screenshot.
-</div>
-</div>
-</div>
-</div>
+        <div class="disclaimer">
+        ⚠️ <strong>Disclaimer:</strong> Generating passkey can take time, so please wait after sending your payment screenshot.
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- MAIN CONTROLLER APP -->
@@ -441,6 +442,7 @@ button:active { transform: scale(0.98); }
 </div>
 
 <button class="btn-undo" style="width: 100%; margin-top: 10px;" onclick="undoLastAction()">↩️ UNDO LAST BALL / ACTION</button>
+<button class="btn-reset" style="width: 100%; margin-top: 10px;" onclick="resetMatch()">🔄 RESET MATCH / CLEAR ALL</button>
 <button class="btn-red" style="width: 100%; margin-top: 10px;" onclick="logout()">LOGOUT SESSION</button>
 
 </div>
@@ -450,15 +452,15 @@ button:active { transform: scale(0.98); }
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
 <script>
-const SYSTEM_AUTH_VERSION = "v2_reset";
-
 const firebaseConfig = {
   databaseURL: "https://betterone48-207a0-default-rtdb.asia-southeast1.firebasedatabase.app"
 };
-firebase.initializeApp(firebaseConfig);
+if (!firebase.apps.length) {
+  firebase.initializeApp(firebaseConfig);
+}
 
-let db = null;
-let activeMatchId = 'match_1';
+const urlParams = new URLSearchParams(window.location.search);
+let activeMatchId = urlParams.get('match') || 'match_1';
 
 let runs = 0, wickets = 0, legalBalls = 0;
 let strikerRuns = 0, strikerBalls = 0;
@@ -477,6 +479,74 @@ let isPendingWicketBatsmanPicker = false;
 
 let playerStats = {};
 let historyStack = [];
+
+// AUTHENTICATION & LICENSE VERIFICATION
+window.onload = function() {
+  const isUnlocked = localStorage.getItem('pulse_controller_unlocked');
+  if (isUnlocked === 'true') {
+    document.getElementById('paywallModal').style.display = 'none';
+    document.getElementById('appContainer').style.display = 'flex';
+    updateTeamDropdowns();
+    sync();
+  } else {
+    document.getElementById('paywallModal').style.display = 'flex';
+    document.getElementById('appContainer').style.display = 'none';
+  }
+};
+
+function verifyLicenseKey() {
+  const key = document.getElementById('accessKeyInput').value.trim();
+  if (key === 'PULSE99' || key === 'LIONS2026' || key === 'ADMIN123') {
+    localStorage.setItem('pulse_controller_unlocked', 'true');
+    document.getElementById('paywallModal').style.display = 'none';
+    document.getElementById('appContainer').style.display = 'flex';
+    updateTeamDropdowns();
+    sync();
+  } else {
+    alert("Invalid Access Key! Please check your payment screenshot details.");
+  }
+}
+
+function logout() {
+  localStorage.removeItem('pulse_controller_unlocked');
+  location.reload();
+}
+
+// RESET ALL MATCH DATA & CLEAR STATE
+function resetMatch() {
+  if (!confirm("Are you sure you want to reset the entire match? This will clear all scores, stats, and match state.")) {
+    return;
+  }
+
+  runs = 0; wickets = 0; legalBalls = 0;
+  strikerRuns = 0; strikerBalls = 0;
+  nonStrikerRuns = 0; nonStrikerBalls = 0;
+  bowlerRuns = 0; bowlerWickets = 0; bowlerBalls = 0;
+  currentOverBalls = [];
+  matchStatusText = "";
+  tossDecisionText = "";
+  tossWinnerName = "";
+  tossCallResult = "";
+  manOfTheMatchName = "";
+  isMatchOver = false;
+  playerStats = {};
+  historyStack = [];
+
+  // Reset Input Defaults
+  document.getElementById('in-team-a').value = "TEAM A";
+  document.getElementById('in-team-b').value = "TEAM B";
+  document.getElementById('in-innings').value = "1";
+  document.getElementById('in-max-overs').value = "20";
+  document.getElementById('in-target').value = "0";
+  document.getElementById('in-team-a-squad').value = "Player 1, Player 2, Player 3, Player 4, Player 5, Player 6, Player 7, Player 8, Player 9, Player 10, Player 11";
+  document.getElementById('in-team-b-squad').value = "Player A, Player B, Player C, Player D, Player E, Player F, Player G, Player H, Player I, Player J, Player K";
+
+  document.getElementById('toss-banner').innerText = "TOSS: Pending...";
+
+  updateTeamDropdowns();
+  sync("RESET_MATCH");
+  alert("Match reset back to initial state!");
+}
 
 function showTopAnimation(type) {
   const container = document.getElementById('topAnimationOverlay');
@@ -498,6 +568,111 @@ function showTopAnimation(type) {
   setTimeout(() => {
     container.style.display = 'none';
   }, 2800);
+}
+
+// FULL FIREBASE SYNC & LOCAL DOM UPDATE FUNCTION
+function sync(eventType = "NORMAL") {
+  const oversFormatted = `${Math.floor(legalBalls / 6)}.${legalBalls % 6}`;
+  const bowlerOversFormatted = `${Math.floor(bowlerBalls / 6)}.${bowlerBalls % 6}`;
+
+  const teamA = document.getElementById('in-team-a').value || "TEAM A";
+  const teamB = document.getElementById('in-team-b').value || "TEAM B";
+  const strikerName = document.getElementById('in-striker').value || "Striker";
+  const nonStrikerName = document.getElementById('in-non-striker').value || "Non-Striker";
+  const bowlerName = document.getElementById('in-bowler').value || "Bowler";
+  const innings = document.getElementById('in-innings').value;
+  const maxOvers = parseInt(document.getElementById('in-max-overs').value) || 20;
+  const target = parseInt(document.getElementById('in-target').value) || 0;
+  const squadA = document.getElementById('in-team-a-squad').value;
+  const squadB = document.getElementById('in-team-b-squad').value;
+
+  // Local DOM Updates
+  document.getElementById('runs').innerText = runs;
+  document.getElementById('wickets').innerText = wickets;
+  document.getElementById('overs').innerText = oversFormatted;
+  document.getElementById('out-max-overs').innerText = maxOvers;
+  document.getElementById('out-team-a').innerText = teamA;
+  document.getElementById('out-team-b').innerText = teamB;
+  document.getElementById('out-striker').innerText = `${strikerName}* ${strikerRuns} (${strikerBalls})`;
+  document.getElementById('out-non-striker').innerText = `${nonStrikerName} ${nonStrikerRuns} (${nonStrikerBalls})`;
+  document.getElementById('out-bowler').innerText = `${bowlerName} ${bowlerWickets}-${bowlerRuns} (${bowlerOversFormatted})`;
+  document.getElementById('out-this-over').innerText = `THIS OVER: [ ${currentOverBalls.join(' ') || '-'} ]`;
+
+  if (tossWinnerName) {
+    document.getElementById('toss-banner').innerText = `TOSS: ${tossWinnerName} won (${tossCallResult}) & chose to ${tossDecisionText}`;
+  }
+
+  // Push payload to Firebase including lastEvent and animId
+  firebase.database().ref('matches/' + activeMatchId).set({
+    teamA,
+    teamB,
+    squadA,
+    squadB,
+    runs,
+    wickets,
+    overs: oversFormatted,
+    maxOvers,
+    innings,
+    target,
+    strikerName,
+    strikerRuns,
+    strikerBalls,
+    nonStrikerName,
+    nonStrikerRuns,
+    nonStrikerBalls,
+    bowler: bowlerName,
+    bowlerRuns,
+    bowlerWickets,
+    bowlerOvers: bowlerOversFormatted,
+    thisOver: currentOverBalls.join(' '),
+    lastEvent: eventType,
+    animId: Date.now(),
+    isMatchOver,
+    matchStatusText,
+    manOfTheMatchName,
+    tossDecisionText,
+    playerStats
+  });
+}
+
+function saveState() {
+  historyStack.push(JSON.stringify({
+    runs, wickets, legalBalls,
+    strikerRuns, strikerBalls,
+    nonStrikerRuns, nonStrikerBalls,
+    bowlerRuns, bowlerWickets, bowlerBalls,
+    currentOverBalls: [...currentOverBalls],
+    playerStats: JSON.parse(JSON.stringify(playerStats)),
+    strikerVal: document.getElementById('in-striker').value,
+    nonStrikerVal: document.getElementById('in-non-striker').value,
+    bowlerVal: document.getElementById('in-bowler').value
+  }));
+}
+
+function undoLastAction() {
+  if (historyStack.length === 0) {
+    alert("Nothing to undo!");
+    return;
+  }
+  const prevState = JSON.parse(historyStack.pop());
+  runs = prevState.runs;
+  wickets = prevState.wickets;
+  legalBalls = prevState.legalBalls;
+  strikerRuns = prevState.strikerRuns;
+  strikerBalls = prevState.strikerBalls;
+  nonStrikerRuns = prevState.nonStrikerRuns;
+  nonStrikerBalls = prevState.nonStrikerBalls;
+  bowlerRuns = prevState.bowlerRuns;
+  bowlerWickets = prevState.bowlerWickets;
+  bowlerBalls = prevState.bowlerBalls;
+  currentOverBalls = prevState.currentOverBalls;
+  playerStats = prevState.playerStats;
+
+  document.getElementById('in-striker').value = prevState.strikerVal;
+  document.getElementById('in-non-striker').value = prevState.nonStrikerVal;
+  document.getElementById('in-bowler').value = prevState.bowlerVal;
+
+  sync('UNDO');
 }
 
 function updateTeamDropdowns() {
@@ -617,7 +792,7 @@ function addBall(runVal, labelText, eventType = null) {
     overFinished = true;
   }
 
-  sync(eventType);
+  sync(eventType || 'BALL');
 
   if (overFinished) {
     currentOverBalls = [];
@@ -714,7 +889,7 @@ function addExtra(type, totalRunsToAdd, label, addRunsToBat = 0) {
 
   if (addRunsToBat % 2 !== 0) swapStrike();
 
-  sync();
+  sync('EXTRA');
 }
 
 function swapStrike() {
@@ -797,6 +972,17 @@ function confirmNewBatsman() {
   sync();
 }
 
+function announceManOfTheMatch() {
+  manOfTheMatchName = document.getElementById('in-mom-select').value;
+  if (!manOfTheMatchName) {
+    alert("Select a player first!");
+    return;
+  }
+  isMatchOver = true;
+  matchStatusText = `MATCH FINISHED!`;
+  sync("MATCH_OVER");
+}
+
 function showFullScorecardOverlay() {
   if (isMatchOver) {
     alert("Match is finished!");
@@ -808,6 +994,7 @@ function showFullScorecardOverlay() {
   }, 5000);
 }
 
+/* INTERACTIVE TOSS LOGIC */
 function startInteractiveToss() {
   saveState();
   const coinModal = document.getElementById('coinFlipModal');
@@ -834,270 +1021,29 @@ function startInteractiveToss() {
   setTimeout(() => {
     coinModal.style.display = 'none';
     document.getElementById('tossWinnerModal').style.display = 'flex';
-  }, 2600);
+  }, 2700);
 }
 
 function setCoinResult(res) {
   tossCallResult = res;
 }
 
-function selectTossWinner(winnerKey) {
+function selectTossWinner(winnerStr) {
   const teamA = document.getElementById('in-team-a').value;
   const teamB = document.getElementById('in-team-b').value;
-  tossWinnerName = winnerKey === "Team A" ? teamA : teamB;
+  tossWinnerName = winnerStr === 'Team A' ? teamA : teamB;
 
   document.getElementById('tossWinnerModal').style.display = 'none';
-  document.getElementById('tossPromptTitle').innerText = `${tossWinnerName} Won The Toss!`;
+  document.getElementById('tossPromptTitle').innerText = `${tossWinnerName.toUpperCase()} WON THE TOSS`;
   document.getElementById('tossModal').style.display = 'flex';
 }
 
-function setTossDecision(decision) {
-  saveState();
-  const teamA = document.getElementById('in-team-a').value;
-  const teamB = document.getElementById('in-team-b').value;
-
-  const callInfo = tossCallResult ? `(${tossCallResult}) ` : '';
-  tossDecisionText = `${tossWinnerName} won the toss ${callInfo}& elected to ${decision} first`;
+function setTossDecision(decisionStr) {
+  tossDecisionText = decisionStr;
   document.getElementById('tossModal').style.display = 'none';
-
-  if ((tossWinnerName === teamB && decision === "BAT") || (tossWinnerName === teamA && decision === "BOWL")) {
-    document.getElementById('in-team-a').value = teamB;
-    document.getElementById('in-team-b').value = teamA;
-    updateTeamDropdowns();
-  }
-
-  sync("TOSS_RESULT");
+  sync("TOSS_COMPLETE");
 }
-
-function announceManOfTheMatch() {
-  const selectedPlayer = document.getElementById('in-mom-select').value;
-  if (!selectedPlayer) return alert("Please select a player for Man of the Match!");
-  manOfTheMatchName = selectedPlayer;
-  sync("MAN_OF_THE_MATCH");
-}
-
-function saveState() {
-  const currentState = {
-    runs, wickets, legalBalls,
-    strikerRuns, strikerBalls,
-    nonStrikerRuns, nonStrikerBalls,
-    bowlerRuns, bowlerWickets, bowlerBalls,
-    currentOverBalls: [...currentOverBalls],
-    strikerName: document.getElementById('in-striker').value,
-    nonStrikerName: document.getElementById('in-non-striker').value,
-    bowlerName: document.getElementById('in-bowler').value,
-    teamA: document.getElementById('in-team-a').value,
-    teamB: document.getElementById('in-team-b').value,
-    isMatchOver: isMatchOver,
-    matchStatusText: matchStatusText,
-    tossDecisionText: tossDecisionText,
-    manOfTheMatchName: manOfTheMatchName,
-    playerStats: JSON.parse(JSON.stringify(playerStats))
-  };
-  historyStack.push(JSON.stringify(currentState));
-  if (historyStack.length > 20) historyStack.shift();
-}
-
-function undoLastAction() {
-  if (historyStack.length === 0) {
-    alert("No previous ball or action to undo!");
-    return;
-  }
-  const lastState = JSON.parse(historyStack.pop());
-  runs = lastState.runs;
-  wickets = lastState.wickets;
-  legalBalls = lastState.legalBalls;
-  strikerRuns = lastState.strikerRuns;
-  strikerBalls = lastState.strikerBalls;
-  nonStrikerRuns = lastState.nonStrikerRuns;
-  nonStrikerBalls = lastState.nonStrikerBalls;
-  bowlerRuns = lastState.bowlerRuns;
-  bowlerWickets = lastState.bowlerWickets;
-  bowlerBalls = lastState.bowlerBalls;
-  currentOverBalls = lastState.currentOverBalls;
-  isMatchOver = lastState.isMatchOver;
-  matchStatusText = lastState.matchStatusText;
-  tossDecisionText = lastState.tossDecisionText;
-  manOfTheMatchName = lastState.manOfTheMatchName;
-  playerStats = lastState.playerStats || {};
-
-  document.getElementById('in-team-a').value = lastState.teamA;
-  document.getElementById('in-team-b').value = lastState.teamB;
-  updateTeamDropdowns();
-
-  document.getElementById('in-striker').value = lastState.strikerName;
-  document.getElementById('in-non-striker').value = lastState.nonStrikerName;
-  document.getElementById('in-bowler').value = lastState.bowlerName;
-
-  sync();
-}
-
-function sync(eventType = "NORMAL") {
-  const oversFormatted = `${Math.floor(legalBalls / 6)}.${legalBalls % 6}`;
-  const bowlerOversFormatted = `${Math.floor(bowlerBalls / 6)}.${bowlerBalls % 6}`;
-
-  const teamA = document.getElementById('in-team-a').value || "TEAM A";
-  const teamB = document.getElementById('in-team-b').value || "TEAM B";
-  const strikerName = document.getElementById('in-striker').value || "Striker";
-  const nonStrikerName = document.getElementById('in-non-striker').value || "Non-Striker";
-  const bowlerName = document.getElementById('in-bowler').value || "Bowler";
-  const innings = document.getElementById('in-innings').value;
-  const maxOvers = parseInt(document.getElementById('in-max-overs').value) || 20;
-  const target = parseInt(document.getElementById('in-target').value) || 0;
-
-  // DOM Updates
-  document.getElementById('runs').innerText = runs;
-  document.getElementById('wickets').innerText = wickets;
-  document.getElementById('overs').innerText = oversFormatted;
-  document.getElementById('out-max-overs').innerText = maxOvers;
-  document.getElementById('out-team-a').innerText = teamA;
-  document.getElementById('out-team-b').innerText = teamB;
-  document.getElementById('out-striker').innerText = `${strikerName}* ${strikerRuns} (${strikerBalls})`;
-  document.getElementById('out-non-striker').innerText = `${nonStrikerName} ${nonStrikerRuns} (${nonStrikerBalls})`;
-  document.getElementById('out-bowler').innerText = `${bowlerName} ${bowlerWickets}-${bowlerRuns} (${bowlerOversFormatted})`;
-  document.getElementById('out-this-over').innerText = `THIS OVER: [ ${currentOverBalls.join(' ') || '-'} ]`;
-
-  if (tossDecisionText) {
-    document.getElementById('toss-banner').innerText = `TOSS: ${tossDecisionText}`;
-  }
-
-  // Target Banner calculation
-  const targetBanner = document.getElementById('target-banner');
-  if (innings === "2") {
-    targetBanner.style.display = "flex";
-    const ballsRemaining = Math.max(0, (maxOvers * 6) - legalBalls);
-    const runsNeeded = Math.max(0, target - runs);
-    const rrr = ballsRemaining > 0 ? ((runsNeeded / ballsRemaining) * 6).toFixed(2) : "0.00";
-
-    document.getElementById('out-target').innerText = target;
-    document.getElementById('out-need').innerText = `NEED ${runsNeeded} OFF ${ballsRemaining} BALLS`;
-    document.getElementById('out-rrr').innerText = rrr;
-  } else {
-    targetBanner.style.display = "none";
-  }
-
-  // Firebase Push
-  if (db) {
-    db.set({
-      teamA, teamB, runs, wickets,
-      overs: oversFormatted,
-      maxOvers, innings, target,
-      strikerName, strikerRuns, strikerBalls,
-      nonStrikerName, nonStrikerRuns, nonStrikerBalls,
-      bowler: bowlerName, bowlerRuns, bowlerWickets,
-      bowlerOvers: bowlerOversFormatted,
-      thisOver: currentOverBalls.join(' '),
-      eventType, tossDecisionText, manOfTheMatchName,
-      playerStats
-    });
-  }
-}
-
-function checkSavedLicense() {
-  const savedVersion = localStorage.getItem('cricket_auth_version');
-
-  if (savedVersion !== SYSTEM_AUTH_VERSION) {
-    localStorage.clear();
-    localStorage.setItem('cricket_auth_version', SYSTEM_AUTH_VERSION);
-    lockApp();
-    return;
-  }
-
-  const savedKey = localStorage.getItem('cricket_passkey');
-  const savedMatchId = localStorage.getItem('cricket_match_id');
-
-  if (savedKey && savedMatchId && savedMatchId !== "undefined" && savedMatchId !== "null") {
-    initMatchDatabase(savedMatchId);
-    unlockApp();
-  } else {
-    lockApp();
-  }
-}
-
-function verifyLicenseKey() {
-  const enteredKey = document.getElementById('accessKeyInput').value.trim();
-  if (!enteredKey) {
-    alert("Please enter a passkey!");
-    return;
-  }
-
-  firebase.database().ref('passkeys/' + enteredKey).once('value')
-  .then((snapshot) => {
-    if (snapshot.exists()) {
-      let targetMatchId = 'match_1';
-      const data = snapshot.val();
-
-      if (typeof data === 'string' && data.trim() !== '') {
-        targetMatchId = data.trim();
-      } else if (typeof data === 'object' && data !== null && data.matchId) {
-        targetMatchId = data.matchId;
-      }
-
-      localStorage.setItem('cricket_passkey', enteredKey);
-      localStorage.setItem('cricket_match_id', targetMatchId);
-      localStorage.setItem('cricket_auth_version', SYSTEM_AUTH_VERSION);
-
-      initMatchDatabase(targetMatchId);
-      unlockApp();
-    } else {
-      alert("Invalid or revoked passkey!");
-    }
-  })
-  .catch((err) => {
-    console.error(err);
-    alert("Error verifying key.");
-  });
-}
-
-function lockApp() {
-  const modal = document.getElementById('paywallModal');
-  if (modal) modal.style.display = 'flex';
-
-  const app = document.getElementById('appContainer');
-  if (app) app.style.display = 'none';
-}
-
-function unlockApp() {
-  const modal = document.getElementById('paywallModal');
-  if (modal) modal.style.display = 'none';
-
-  const app = document.getElementById('appContainer');
-  if (app) app.style.display = 'flex';
-}
-
-function logout() {
-  localStorage.clear();
-  location.reload();
-}
-
-function initMatchDatabase(matchId) {
-  if (!matchId || matchId === "undefined" || matchId === "null" || matchId.trim() === "") {
-    matchId = 'match_1';
-  }
-  activeMatchId = matchId;
-  db = firebase.database().ref('matches/' + activeMatchId);
-
-  updateTeamDropdowns();
-
-  db.on('value', (snapshot) => {
-    const data = snapshot.val();
-    if (data) {
-      document.getElementById('out-team-a').innerText = data.teamA || 'TEAM A';
-      document.getElementById('out-team-b').innerText = data.teamB || 'TEAM B';
-      document.getElementById('out-striker').innerText = `${data.strikerName || 'Striker'}* ${data.strikerRuns || 0} (${data.strikerBalls || 0})`;
-      document.getElementById('out-non-striker').innerText = `${data.nonStrikerName || 'Non-Striker'} ${data.nonStrikerRuns || 0} (${data.nonStrikerBalls || 0})`;
-      document.getElementById('out-bowler').innerText = `${data.bowler || 'Bowler'} ${data.bowlerWickets || 0}-${data.bowlerRuns || 0} (${data.bowlerOvers || '0.0'})`;
-      document.getElementById('out-this-over').innerText = `THIS OVER: [ ${data.thisOver || '-'} ]`;
-      document.getElementById('runs').innerText = data.runs !== undefined ? data.runs : 0;
-      document.getElementById('wickets').innerText = data.wickets !== undefined ? data.wickets : 0;
-      document.getElementById('overs').innerText = data.overs || '0.0';
-    }
-  });
-}
-
-window.onload = function() {
-  checkSavedLicense();
-};
 </script>
+
 </body>
 </html>

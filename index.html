@@ -475,7 +475,6 @@ let manOfTheMatchName = "";
 let isMatchOver = false;
 
 let activeExtraType = null;
-let isPendingWicketBatsmanPicker = false;
 
 let playerStats = {};
 let historyStack = [];
@@ -539,7 +538,6 @@ function resetMatch() {
   playerStats = {};
   historyStack = [];
 
-  // Reset Input Defaults
   document.getElementById('in-team-a').value = "TEAM A";
   document.getElementById('in-team-b').value = "TEAM B";
   document.getElementById('in-innings').value = "1";
@@ -609,6 +607,22 @@ function sync(eventType = "NORMAL") {
     document.getElementById('toss-banner').innerText = `TOSS: ${tossWinnerName} won (${tossCallResult}) & chose to ${tossDecisionText}`;
   }
 
+  // 2nd Innings Target Banner Update
+  const targetBanner = document.getElementById('target-banner');
+  if (innings === '2' && target > 0) {
+    targetBanner.style.display = 'flex';
+    const runsNeeded = target - runs;
+    const totalMaxBalls = maxOvers * 6;
+    const ballsRemaining = Math.max(0, totalMaxBalls - legalBalls);
+    
+    document.getElementById('out-target').innerText = target;
+    document.getElementById('out-need').innerText = runsNeeded > 0 ? `NEED ${runsNeeded} OFF ${ballsRemaining} BALLS` : 'TARGET ACHIEVED';
+    const rrr = ballsRemaining > 0 ? ((runsNeeded / ballsRemaining) * 6).toFixed(2) : '0.00';
+    document.getElementById('out-rrr').innerText = rrr > 0 ? rrr : '0.00';
+  } else {
+    targetBanner.style.display = 'none';
+  }
+
   // Push payload to Firebase including lastEvent and animId
   firebase.database().ref('matches/' + activeMatchId).set({
     teamA,
@@ -636,7 +650,7 @@ function sync(eventType = "NORMAL") {
     animId: Date.now(),
     isMatchOver,
     matchStatusText,
-    manOfTheMatchName,
+    manOfTheMatch: manOfTheMatchName,
     tossDecisionText,
     playerStats
   });
@@ -757,9 +771,287 @@ function onBowlerChange() {
     bowlerRuns = playerStats[bName].conceded || 0;
     bowlerWickets = playerStats[bName].wickets || 0;
     bowlerBalls = playerStats[bName].bowlerBalls || 0;
+  } else {
+    bowlerRuns = 0; bowlerWickets = 0; bowlerBalls = 0;
   }
   sync();
 }
+
+function swapStrike() {
+  saveState();
+  const sSel = document.getElementById('in-striker');
+  const nsSel = document.getElementById('in-non-striker');
+  
+  const tempVal = sSel.value;
+  sSel.value = nsSel.value;
+  nsSel.value = tempVal;
+
+  const tempR = strikerRuns; strikerRuns = nonStrikerRuns; nonStrikerRuns = tempR;
+  const tempB = strikerBalls; strikerBalls = nonStrikerBalls; nonStrikerBalls = tempB;
+
+  sync('SWAP_STRIKE');
+}
+
+function addBall(addedRuns, displaySymbol, animType = 'NORMAL') {
+  saveState();
+  runs += addedRuns;
+  legalBalls += 1;
+  strikerRuns += addedRuns;
+  strikerBalls += 1;
+  bowlerRuns += addedRuns;
+  bowlerBalls += 1;
+
+  currentOverBalls.push(displaySymbol);
+
+  const sName = document.getElementById('in-striker').value;
+  const bName = document.getElementById('in-bowler').value;
+
+  if (sName && playerStats[sName]) {
+    playerStats[sName].runs = strikerRuns;
+    playerStats[sName].balls = strikerBalls;
+  }
+
+  if (bName && playerStats[bName]) {
+    playerStats[bName].conceded = bowlerRuns;
+    playerStats[bName].bowlerBalls = bowlerBalls;
+    playerStats[bName].overs = `${Math.floor(bowlerBalls / 6)}.${bowlerBalls % 6}`;
+  }
+
+  if (animType === 'FOUR' || animType === 'SIX') {
+    showTopAnimation(animType);
+  }
+
+  if (addedRuns % 2 !== 0) {
+    swapStrike();
+  }
+
+  if (legalBalls % 6 === 0) {
+    swapStrike();
+    currentOverBalls = [];
+    promptNextBowlerModal();
+  }
+
+  sync(animType);
+}
+
+function openExtraModal(type) {
+  activeExtraType = type;
+  document.getElementById('extraModalTitle').innerText = type === 'wd' ? 'WIDE BALL EXTRAS' : 'NO BALL EXTRAS';
+  document.getElementById('extraRunsModal').style.display = 'flex';
+}
+
+function confirmExtraWithRuns(extraBatRuns) {
+  document.getElementById('extraRunsModal').style.display = 'none';
+  saveState();
+
+  const extraTotal = 1 + extraBatRuns;
+  runs += extraTotal;
+  bowlerRuns += extraTotal;
+  strikerRuns += extraBatRuns;
+
+  const symbol = activeExtraType === 'wd' ? `WD${extraBatRuns > 0 ? '+' + extraBatRuns : ''}` : `NB${extraBatRuns > 0 ? '+' + extraBatRuns : ''}`;
+  currentOverBalls.push(symbol);
+
+  const sName = document.getElementById('in-striker').value;
+  const bName = document.getElementById('in-bowler').value;
+
+  if (sName && playerStats[sName]) {
+    playerStats[sName].runs = strikerRuns;
+  }
+
+  if (bName && playerStats[bName]) {
+    playerStats[bName].conceded = bowlerRuns;
+  }
+
+  if (extraBatRuns % 2 !== 0) {
+    swapStrike();
+  }
+
+  sync('EXTRA');
+}
+
+function addExtra(type, amount, displaySymbol) {
+  saveState();
+  runs += amount;
+  if (type === 'b') {
+    legalBalls += 1;
+    bowlerBalls += 1;
+    strikerBalls += 1;
+    currentOverBalls.push(displaySymbol);
+  }
+
+  if (legalBalls % 6 === 0 && type === 'b') {
+    swapStrike();
+    currentOverBalls = [];
+    promptNextBowlerModal();
+  }
+
+  sync('EXTRA');
+}
+
+function addWicket() {
+  saveState();
+  wickets += 1;
+  legalBalls += 1;
+  strikerBalls += 1;
+  bowlerWickets += 1;
+  bowlerBalls += 1;
+
+  currentOverBalls.push('W');
+  showTopAnimation('WICKET');
+
+  const sName = document.getElementById('in-striker').value;
+  const bName = document.getElementById('in-bowler').value;
+
+  if (sName && playerStats[sName]) {
+    playerStats[sName].runs = strikerRuns;
+    playerStats[sName].balls = strikerBalls;
+    playerStats[sName].isOut = true;
+    playerStats[sName].status = 'out';
+  }
+
+  if (bName && playerStats[bName]) {
+    playerStats[bName].wickets = bowlerWickets;
+    playerStats[bName].conceded = bowlerRuns;
+    playerStats[bName].bowlerBalls = bowlerBalls;
+    playerStats[bName].overs = `${Math.floor(bowlerBalls / 6)}.${bowlerBalls % 6}`;
+  }
+
+  if (legalBalls % 6 === 0) {
+    swapStrike();
+    currentOverBalls = [];
+  }
+
+  promptNewBatsmanModal();
+  sync('WICKET');
+}
+
+function promptNewBatsmanModal() {
+  const squadA = document.getElementById('in-team-a-squad').value.split(',').map(s => s.trim()).filter(Boolean);
+  const modalSel = document.getElementById('modalBatsmanSelect');
+  modalSel.innerHTML = '';
+
+  squadA.forEach(p => {
+    if (playerStats[p] && !playerStats[p].isOut && playerStats[p].status !== 'Batting') {
+      modalSel.add(new Option(p, p));
+    }
+  });
+
+  if (modalSel.options.length > 0) {
+    document.getElementById('newBatsmanModal').style.display = 'flex';
+  } else {
+    alert("All batsmen out!");
+  }
+}
+
+function confirmNewBatsman() {
+  const selected = document.getElementById('modalBatsmanSelect').value;
+  if (!selected) return;
+
+  document.getElementById('newBatsmanModal').style.display = 'none';
+  document.getElementById('in-striker').value = selected;
+
+  strikerRuns = playerStats[selected].runs || 0;
+  strikerBalls = playerStats[selected].balls || 0;
+  playerStats[selected].status = 'Batting';
+
+  if (legalBalls % 6 === 0) {
+    promptNextBowlerModal();
+  }
+
+  sync('NEW_BATSMAN');
+}
+
+function promptNextBowlerModal() {
+  const squadB = document.getElementById('in-team-b-squad').value.split(',').map(s => s.trim()).filter(Boolean);
+  const currentBowler = document.getElementById('in-bowler').value;
+  const modalSel = document.getElementById('modalBowlerSelect');
+  modalSel.innerHTML = '';
+
+  squadB.forEach(p => {
+    if (p !== currentBowler) {
+      modalSel.add(new Option(p, p));
+    }
+  });
+
+  document.getElementById('nextBowlerModal').style.display = 'flex';
+}
+
+function confirmNextBowler() {
+  const selected = document.getElementById('modalBowlerSelect').value;
+  if (!selected) return;
+
+  document.getElementById('nextBowlerModal').style.display = 'none';
+  document.getElementById('in-bowler').value = selected;
+
+  onBowlerChange();
+}
+
+function manualAdjust(type, val) {
+  saveState();
+  if (type === 'runs') runs = Math.max(0, runs + val);
+  if (type === 'balls') legalBalls = Math.max(0, legalBalls + val);
+  sync('MANUAL');
+}
+
+function showFullScorecardOverlay() {
+  sync('FULL_SCORECARD');
+}
+
+function announceManOfTheMatch() {
+  manOfTheMatchName = document.getElementById('in-mom-select').value;
+  if (!manOfTheMatchName) {
+    alert("Please select a player for Man of the Match!");
+    return;
+  }
+  isMatchOver = true;
+  matchStatusText = `MATCH OVER - ${manOfTheMatchName.toUpperCase()} IS MAN OF THE MATCH!`;
+  sync('MATCH_OVER');
+  alert(`Announced ${manOfTheMatchName} as Man of the Match on overlay!`);
+}
+
+// TOSS LOGIC
+function startInteractiveToss() {
+  const btnA = document.getElementById('btnTeamAWin');
+  const btnB = document.getElementById('btnTeamBWin');
+  btnA.innerText = document.getElementById('in-team-a').value || 'TEAM A';
+  btnB.innerText = document.getElementById('in-team-b').value || 'TEAM B';
+
+  document.getElementById('coinFlipModal').style.display = 'flex';
+  const coin = document.getElementById('coinElem');
+  coin.style.transform = 'rotateY(0deg)';
+
+  setTimeout(() => {
+    const isHeads = Math.random() < 0.5;
+    coin.style.transform = isHeads ? 'rotateY(1800deg)' : 'rotateY(1980deg)';
+    
+    setTimeout(() => {
+      document.getElementById('coinFlipModal').style.display = 'none';
+      document.getElementById('tossWinnerModal').style.display = 'flex';
+    }, 2600);
+  }, 300);
+}
+
+function setCoinResult(res) {
+  tossCallResult = res;
+}
+
+function selectTossWinner(winner) {
+  const teamA = document.getElementById('in-team-a').value || "Team A";
+  const teamB = document.getElementById('in-team-b').value || "Team B";
+  tossWinnerName = winner === 'Team A' ? teamA : teamB;
+
+  document.getElementById('tossWinnerModal').style.display = 'none';
+  document.getElementById('tossPromptTitle').innerText = `${tossWinnerName} WON THE TOSS`;
+  document.getElementById('tossModal').style.display = 'flex';
+}
+
+function setTossDecision(decision) {
+  tossDecisionText = decision === 'BAT' ? 'Bat First' : 'Bowl First';
+  document.getElementById('tossModal').style.display = 'none';
+  sync('TOSS_UPDATE');
+}
 </script>
+
 </body>
 </html>

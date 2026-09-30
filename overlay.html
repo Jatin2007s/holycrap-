@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cricket Scorecard Overlay - Pulse Streaming</title>
+  <title>Cricket Scorecard Overlay</title>
 
   <!-- Firebase Compatibility SDKs -->
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
@@ -50,11 +50,6 @@
       0% { box-shadow: 0 0 10px #ff1744; border-color: #ff1744; }
       50% { box-shadow: 0 0 50px #ff1744, inset 0 0 25px #ff1744; border-color: #ff1744; transform: scale(1.03); }
       100% { box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6); border-color: rgba(255, 255, 255, 0.08); transform: scale(1); }
-    }
-
-    @keyframes pulseLogo {
-      0%, 100% { opacity: 0.12; transform: scale(1); }
-      50% { opacity: 0.25; transform: scale(1.05); }
     }
 
     /* Helper Trigger Classes */
@@ -117,13 +112,6 @@
       position: relative;
       overflow: hidden;
       transition: transform 0.2s ease, box-shadow 0.2s ease;
-    }
-
-    .card-bg-logo {
-      position: absolute; right: -10px; bottom: -15px; height: 140%; width: auto;
-      opacity: 0.12; pointer-events: none; z-index: 0;
-      filter: drop-shadow(0 0 12px rgba(0, 229, 255, 0.4));
-      animation: pulseLogo 4s infinite ease-in-out;
     }
 
     .top-bar, .bottom-bar { position: relative; z-index: 1; }
@@ -197,21 +185,6 @@
 
   <!-- SCORECARD OVERLAY CARD -->
   <div class="overlay-card" id="mainCard">
-    <svg class="card-bg-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 120">
-      <defs>
-        <linearGradient id="bgGlow" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" stop-color="#FF1744" />
-          <stop offset="100%" stop-color="#D50000" />
-        </linearGradient>
-      </defs>
-      <g transform="translate(15, 10)">
-        <circle cx="50" cy="50" r="38" fill="url(#bgGlow)" />
-        <path d="M 28 28 C 38 40 38 60 28 72 M 72 28 C 62 40 62 60 72 72" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" fill="none" />
-        <path d="M 0 50 H 22 L 32 30 L 44 72 L 56 32 L 66 58 L 76 50 H 100" stroke="#00E5FF" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none" />
-      </g>
-      <text x="125" y="62" font-family="sans-serif" font-weight="900" font-size="34" fill="#FFFFFF">PULSE</text>
-      <text x="126" y="88" font-family="sans-serif" font-weight="700" font-size="16" fill="#00E5FF" letter-spacing="5">STREAMING</text>
-    </svg>
 
     <!-- ACTIVE LIVE MATCH VIEW -->
     <div id="liveView">
@@ -328,7 +301,7 @@
       }, 5000);
     }
 
-    firebase.database().ref('matches/' + matchId).on('value', (snapshot) => {
+    firebase.database().ref('matches/' + matchId.toLowerCase()).on('value', (snapshot) => {
       const data = snapshot.val();
       if (!data) return;
 
